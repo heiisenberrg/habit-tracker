@@ -42,16 +42,16 @@
 
 ## Android
 
-### Android parity beyond theming
+### Android parity (incl. dark theming pass)
 
-**What:** Google Fit steps, home-screen widget, AppCompatDelegate-driven dark mode, notification action parity.
+**What:** Dark-palette theming pass (deferred from the active plan, decision 11B), Google Fit steps, home-screen widget, AppCompatDelegate-driven dark mode, notification action parity.
 
 **Why:** The release APK works today but is a second-class citizen; parity makes it a real fallback device.
 
-**Context:** iOS-first by design (2026-08-30 CEO review). The theming pass is in the active plan; the rest accumulates here. Services already Platform-guard cleanly, so each item is additive.
+**Context:** iOS-first by design (2026-08-30 CEO review; outside voice called Android polish "audience of zero" and the user agreed to defer). Services already Platform-guard cleanly, so each item is additive.
 
 **Effort:** L
 **Priority:** P4
-**Depends on:** Active plan's Android theming pass
+**Depends on:** None
 
 ## Completed
