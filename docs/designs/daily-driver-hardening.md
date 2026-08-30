@@ -57,11 +57,15 @@ chat line logs a habit, and the streak survives a sick day. Everything else
   as 9 sliced commits during this review.
 - **Store migration hardening (reviewer C9):** bump persist `version` to 3 with
   real per-version `migrate` steps. v2→v3 adds every persisted field this plan
-  introduces: `streakFreezes {available, usedOn, runLength}`, `lastRolledDay`,
-  `historyReconciled` (recap carries NO prefs — it is fully automatic).
-  `migrate` must never return `initial()`. On rehydrate parse failure, a small
-  persist-storage wrapper captures the raw string and writes it to a
-  timestamped App Group file BEFORE falling back, so data is recoverable.
+  introduces: `streakFreezes {available, usedOn, runLength}`,
+  `streak {current, best}`, `lastRolledDay`, `historyReconciled` — defaults
+  frozen here: freezes 0/[]/0, streak 0/0, lastRolledDay = install day,
+  historyReconciled false (recap carries NO prefs — it is fully automatic).
+  `migrate` must never return `initial()`. Corrupt-snapshot capture happens
+  INSIDE the custom `storage.getItem` wrapper (that is where JSON.parse runs):
+  save the raw string to the single `routiner-corrupt-dump` AsyncStorage key
+  (overwrite in place), then return null so zustand hydrates defaults and
+  hydration SUCCEEDS — the deadlocking rehydrate-catch path never fires.
   Backup import runs old files through these same migrate steps (a v2 backup
   imports into a v3 app losslessly). Fixture test: a frozen v2 JSON snapshot
   must migrate to v3 with zero data loss (deep-equal on every v2 field; new
@@ -152,6 +156,66 @@ chat line logs a habit, and the streak survives a sick day. Everything else
   or when vacation mode is on; re-armed at next evaluation. Suppression = the
   trigger simply isn't scheduled. No user-facing preferences in v1.
 
+### Eng-review hardening (2026-08-30, /plan-eng-review; corrected by eng outside voice)
+- **E1 (headless invariant — documented, NOT guarded):** react-native-
+  background-fetch dispatches headless work into the EXISTING runtime when the
+  process is alive (HeadlessTask.java silently no-ops when RESUMED); a second
+  store instance exists only when the process is dead. Invariant documented
+  beside OV1; no heartbeat guard (a guard could only misfire, blocking the
+  post-force-kill rollover).
+- **E2 (two canonical selectors):** `dayCompletion(dateKey)` → 0..1 habit
+  fraction (charts/history), and `dayPerfect(dateKey)` → boolean including
+  PLANNER TASKS for that date (the original "streaks count habits AND tasks"
+  rule). Rollover feeds the counter from `dayPerfect` and histories from
+  `dayCompletion`; `perfectToday === dayPerfect(todayKey())` by construction.
+  All prior consumers route through these two.
+- **E3 (test additions):** recap content-builder suite (perfect/1-to-go/zen/
+  vacation/locked variants) and notification-action semantics suite (check ×
+  count habits × both actions × foreground/background delivery).
+- **E4 (storage error channel):** dump and auto-mirror each keep exactly ONE
+  latest copy. Write-failure logging lives in a custom `storage.setItem`
+  wrapper (persist discards setItem rejections — onRehydrateStorage never
+  sees them); quota failures log loudly and surface as a Settings staleness
+  timestamp.
+
+### Eng outside-voice corrections (2026-08-30 — supersede any conflicting wording above)
+1. **Hydration gate:** every non-UI mutation path checks
+   `persist.hasHydrated()` first and only then awaits `onFinishHydration`;
+   with the getItem wrapper, corrupt stores still hydrate (to defaults), so
+   the gate always resolves.
+2. **Import mechanism:** a dedicated `importState` store action replaces each
+   persisted field explicitly — never `setState(imported, true)` (which would
+   strip every action) and never a blind merge.
+3. **Batched rollover:** the entire multi-day roll (histories shift + counter
+   + freezes + lastRolledDay) commits in ONE `set()` — not one write per day.
+4. **Day math:** iterate calendar dateKeys via `addDays` on local dates (no
+   ms/86400000 division, DST-safe); `lastRolledDay >= today` → no-op (clock
+   regression). Fix the existing UTC-parse precedent in
+   `src/services/widget.ts` (new Date(dateKey) parses UTC) as part of T3.
+5. **Actions on Android:** actions are embedded per-notification (categories
+   are iOS-only) — habit changes rebuild the affected trigger notifications
+   on both platforms via one path. Register `notifee.onForegroundEvent`
+   (currently absent) so foreground taps aren't dropped.
+6. **"+step" lifecycle:** after a +step press the handler re-posts an updated
+   notification ("1500 ML to go" + same actions); "Complete" or goal-reached
+   cancels it.
+7. **afterMutation() seam:** one shared post-write hook (App Lock re-eval +
+   sharedState payload + recap re-arm) called by notification handlers,
+   quick-log, import, and rollover — the App.tsx effects remain the UI-path
+   caller.
+8. **Ordering:** C4 notification actions ALSO depend on 1A (payload writes);
+   move it after 1A alongside D8. Drop vestigial "backup metadata" from the
+   1A payload (post-8A nothing native reads it).
+9. **Shield v1 scope:** ShieldConfiguration supplies labels/icon ONLY —
+   custom button behavior would need a separate ShieldAction extension and
+   still could not open Routiner; v1 promises no buttons.
+10. **Widget reload budget:** the bridge call always writes App Group
+    defaults; `reloadAllTimelines()` is debounced (≥60s, immediate only on
+    lock-state flips) to respect WidgetKit's daily reload budget.
+11. **Android recap timing:** Doze may defer the 21:00 one-shot on Android;
+    accepted (iOS is the daily driver) and documented — no
+    SCHEDULE_EXACT_ALARM permission requested.
+
 ### Architecture decisions (this review)
 - **1A:** one consolidated App Group `sharedState` JSON (streak, week marks,
   lock state, unlock habit, progress, backup metadata) written by a single
@@ -169,4 +233,19 @@ chat line logs a habit, and the streak survives a sick day. Everything else
 ## Deferred to TODOS.md
 - D10 Widget lock-status upgrade (🔒 line + today ring + lock-screen accessory widget) — after shield screen lands
 - Shareable streak-card image export
-- Android: Google Fit steps, widget parity, AppCompatDelegate dark mode beyond theming pass
+- Android: Google Fit steps, widget parity, AppCompatDelegate dark mode + theming pass (11B)
+
+## GSTACK REVIEW REPORT
+
+| Review | Trigger | Why | Runs | Status | Findings |
+|--------|---------|-----|------|--------|----------|
+| CEO Review | `/plan-ceo-review` | Scope & strategy | 1 | CLEAN | 5 proposals, 4 accepted, 1 deferred |
+| Codex Review | `/codex review` | Independent 2nd opinion | 0 | — | — |
+| Eng Review | `/plan-eng-review` | Architecture & tests (required) | 1 | CLEAN | 20 issues, 0 critical gaps |
+| Design Review | `/plan-design-review` | UI/UX gaps | 0 | — | — |
+| DX Review | `/plan-devex-review` | Developer experience gaps | 0 | — | — |
+
+- **CROSS-MODEL:** two Claude outside voices (fresh-context) ran — CEO-stage (13 findings) and eng-stage (16 source-verified findings incl. one reversal of an in-review recommendation on library evidence). All folded with explicit user approval; zero auto-incorporated.
+- **VERDICT:** CEO + ENG CLEARED — ready to implement.
+
+NO UNRESOLVED DECISIONS
