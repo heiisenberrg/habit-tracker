@@ -1,118 +1,102 @@
 /**
- * Sample React Native App
- * https://github.com/facebook/react-native
+ * Routiner — habit tracker app (Figma community design), built on React Native 0.87.
  *
  * @format
  */
 
-import React from 'react';
-import type {PropsWithChildren} from 'react';
+import React, { useEffect } from 'react';
 import {
-  SafeAreaView,
-  ScrollView,
+  Appearance,
   StatusBar,
   StyleSheet,
-  Text,
   useColorScheme,
-  View,
 } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import RootNavigator from './src/navigation/RootNavigator';
+import { applyAppLock } from './src/services/appLock';
+import { resyncReminders } from './src/services/notifications';
+import { applyInterfaceStyle } from './src/services/theme';
+import { pushStreakToWidget } from './src/services/widget';
+import { useStore } from './src/store/useStore';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+// DEV screenshot aid: force a scheme for both-mode UI sweeps. Keep null.
+const FORCE_SCHEME: 'dark' | 'light' | null = null;
 
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
+function App() {
+  const habits = useStore(s => s.habits);
+  const darkMode = useStore(s => s.darkMode);
+  const completions = useStore(s => s.completions);
+  const statuses = useStore(s => s.statuses);
+  const planner = useStore(s => s.planner);
+  const histories = useStore(s => s.histories);
+  const scheme = useColorScheme();
 
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+  // Keep daily reminder triggers alive (idempotent re-schedule on boot/changes).
+  // Vacation mode wins: resyncing while paused would silently re-arm the
+  // reminders Settings just cancelled.
+  useEffect(() => {
+    if (!useStore.getState().prefs.vacationMode) {
+      resyncReminders(habits);
+    }
+  }, [habits]);
+
+  // Apply the persisted dark-mode choice deterministically: on = dark, off = light.
+  const applied = FORCE_SCHEME ?? (darkMode ? 'dark' : 'light');
+  useEffect(() => {
+    Appearance.setColorScheme(applied);
+    applyInterfaceStyle(applied);
+  }, [applied]);
+
+  // Keep the home-screen streak widget in sync with the store.
+  useEffect(() => {
+    pushStreakToWidget({ habits, completions, statuses, planner, histories });
+  }, [habits, completions, statuses, planner, histories]);
+
+  // App Lock: shield/unshield the picked apps as completions change —
+  // finishing the unlock habit releases them immediately. A running zen
+  // session keeps the shield up regardless.
+  const appLock = useStore(s => s.appLock);
+  const zenUntil = useStore(s => s.zen.until);
+  useEffect(() => {
+    applyAppLock(appLock, habits, completions, statuses, zenUntil);
+  }, [appLock, habits, completions, statuses, zenUntil]);
+
+  // Zen auto-end: when the session expires while the app is open, clear it
+  // and re-arm the reminders it silenced.
+  useEffect(() => {
+    if (!zenUntil) {
+      return;
+    }
+    const endZen = () => {
+      useStore.getState().setZen({ until: null });
+      if (!useStore.getState().prefs.vacationMode) {
+        resyncReminders(useStore.getState().habits);
+      }
+    };
+    const ms = new Date(zenUntil).getTime() - Date.now();
+    if (ms <= 0) {
+      endZen();
+      return;
+    }
+    const t = setTimeout(endZen, ms);
+    return () => clearTimeout(t);
+  }, [zenUntil]);
+
   return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-}
-
-function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
-  };
-
-  return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+    <GestureHandlerRootView style={styles.root}>
+      <SafeAreaProvider>
+        <StatusBar
+          barStyle={scheme === 'dark' ? 'light-content' : 'dark-content'}
+        />
+        <RootNavigator />
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
 
 const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
-  },
+  root: { flex: 1 },
 });
 
 export default App;

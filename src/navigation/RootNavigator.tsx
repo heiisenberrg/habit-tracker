@@ -1,0 +1,111 @@
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import React from 'react';
+import TabBar from '../components/TabBar';
+import ActivityScreen from '../screens/ActivityScreen';
+import CalendarScreen from '../screens/CalendarScreen';
+import ChallengeDetailScreen from '../screens/ChallengeDetailScreen';
+import CreateAccountScreen from '../screens/CreateAccountScreen';
+import CreateCustomHabitScreen from '../screens/CreateCustomHabitScreen';
+import EmailAuthScreen from '../screens/EmailAuthScreen';
+import HabitDetailScreen from '../screens/HabitDetailScreen';
+import HomeScreen from '../screens/HomeScreen';
+import AssistantScreen from '../screens/AssistantScreen';
+import NewGoodHabitScreen from '../screens/NewGoodHabitScreen';
+import NotificationsScreen from '../screens/NotificationsScreen';
+import OnboardingScreen from '../screens/OnboardingScreen';
+import ProfileScreen from '../screens/ProfileScreen';
+import QuickActionsScreen from '../screens/QuickActionsScreen';
+import SettingsScreen from '../screens/SettingsScreen';
+import SplashScreen from '../screens/SplashScreen';
+import SuccessScreen from '../screens/SuccessScreen';
+
+export type RootStackParamList = {
+  Splash: undefined;
+  Onboarding: undefined;
+  EmailAuth: undefined;
+  CreateAccount: undefined;
+  Main: undefined;
+  QuickActions: undefined;
+  NewGoodHabit: undefined;
+  Assistant: { flow?: 'habit' | 'task' | 'reminder' | 'quick' } | undefined;
+  CreateCustomHabit: { kind?: 'build' | 'quit' } | undefined;
+  ChallengeDetail: { id: string };
+  Success: { title?: string } | undefined;
+  Settings: undefined;
+  Notifications: undefined;
+  Calendar: undefined;
+  HabitDetail: { id: string };
+};
+
+const Stack = createNativeStackNavigator<RootStackParamList>();
+const Tabs = createBottomTabNavigator();
+
+// DEV screenshot aid: boot straight into a route for UI sweeps. Keep null.
+const DEBUG_STACK_ROUTE: string | null = null;
+const DEBUG_TAB_ROUTE: string | null = null;
+const DEBUG_PARAMS: object | null = null;
+
+function MainTabs() {
+  return (
+    <Tabs.Navigator
+      tabBar={props => <TabBar {...props} />}
+      initialRouteName={(DEBUG_TAB_ROUTE as any) ?? 'Home'}
+      screenOptions={{ headerShown: false }}
+    >
+      <Tabs.Screen name="Home" component={HomeScreen} />
+      <Tabs.Screen name="Activity" component={ActivityScreen} />
+      <Tabs.Screen name="Profile" component={ProfileScreen} />
+    </Tabs.Navigator>
+  );
+}
+
+function RootNavigator() {
+  return (
+    <NavigationContainer>
+      <Stack.Navigator
+        initialRouteName={(DEBUG_STACK_ROUTE as any) ?? 'Splash'}
+        screenOptions={{ headerShown: false }}
+      >
+        <Stack.Screen name="Splash" component={SplashScreen} />
+        <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+        <Stack.Screen name="EmailAuth" component={EmailAuthScreen} />
+        <Stack.Screen name="CreateAccount" component={CreateAccountScreen} />
+        <Stack.Screen name="Main" component={MainTabs} />
+        <Stack.Group
+          screenOptions={{
+            presentation: 'transparentModal',
+            animation: 'fade',
+          }}
+        >
+          <Stack.Screen name="QuickActions" component={QuickActionsScreen} />
+        </Stack.Group>
+        <Stack.Group screenOptions={{ presentation: 'modal' }}>
+          <Stack.Screen name="Assistant" component={AssistantScreen} />
+          <Stack.Screen name="NewGoodHabit" component={NewGoodHabitScreen} />
+          <Stack.Screen
+            name="CreateCustomHabit"
+            component={CreateCustomHabitScreen}
+          />
+          <Stack.Screen name="Success" component={SuccessScreen} />
+        </Stack.Group>
+        <Stack.Screen
+          name="ChallengeDetail"
+          component={ChallengeDetailScreen}
+          initialParams={(DEBUG_PARAMS as any) ?? undefined}
+        />
+        <Stack.Screen name="Settings" component={SettingsScreen} />
+        <Stack.Screen name="Notifications" component={NotificationsScreen} />
+        <Stack.Screen name="Calendar" component={CalendarScreen} />
+        <Stack.Screen
+          name="HabitDetail"
+          component={HabitDetailScreen}
+          initialParams={(DEBUG_PARAMS as any) ?? undefined}
+        />
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+}
+
+export default RootNavigator;
