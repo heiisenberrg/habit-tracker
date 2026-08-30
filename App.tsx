@@ -7,6 +7,7 @@
 import React, { useEffect } from 'react';
 import {
   Appearance,
+  AppState,
   StatusBar,
   StyleSheet,
   useColorScheme,
@@ -30,7 +31,46 @@ function App() {
   const statuses = useStore(s => s.statuses);
   const planner = useStore(s => s.planner);
   const histories = useStore(s => s.histories);
+  const streak = useStore(s => s.streak);
   const scheme = useColorScheme();
+
+  // Day rollover triggers (single-writer rule): hydration completion,
+  // foregrounding, and a local-midnight timer. rollDays itself is
+  // idempotent by lastRolledDay, so overlapping triggers are harmless.
+  // hasHydrated() is checked FIRST — onFinishHydration only fires for
+  // future hydrations, and (with the getItem wrapper) hydration always
+  // succeeds, so this gate cannot deadlock.
+  useEffect(() => {
+    const roll = () => useStore.getState().rollDays();
+    const p = useStore.persist;
+    if (p.hasHydrated()) {
+      roll();
+    }
+    const unHydrate = p.onFinishHydration(() => roll());
+    const appState = AppState.addEventListener('change', st => {
+      if (st === 'active' && p.hasHydrated()) {
+        roll();
+      }
+    });
+    let midnightTimer: ReturnType<typeof setTimeout>;
+    const armMidnight = () => {
+      const now = new Date();
+      const next = new Date(now);
+      next.setHours(24, 0, 5, 0); // 00:00:05 local, DST-safe via setHours
+      midnightTimer = setTimeout(() => {
+        if (p.hasHydrated()) {
+          roll();
+        }
+        armMidnight();
+      }, next.getTime() - now.getTime());
+    };
+    armMidnight();
+    return () => {
+      unHydrate();
+      appState.remove();
+      clearTimeout(midnightTimer);
+    };
+  }, []);
 
   // Keep daily reminder triggers alive (idempotent re-schedule on boot/changes).
   // Vacation mode wins: resyncing while paused would silently re-arm the
@@ -50,8 +90,15 @@ function App() {
 
   // Keep the home-screen streak widget in sync with the store.
   useEffect(() => {
-    pushStreakToWidget({ habits, completions, statuses, planner, histories });
-  }, [habits, completions, statuses, planner, histories]);
+    pushStreakToWidget({
+      habits,
+      completions,
+      statuses,
+      planner,
+      histories,
+      streak,
+    });
+  }, [habits, completions, statuses, planner, histories, streak]);
 
   // App Lock: shield/unshield the picked apps as completions change —
   // finishing the unlock habit releases them immediately. A running zen

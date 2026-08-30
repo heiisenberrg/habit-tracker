@@ -3,7 +3,6 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import {
   Challenge,
-  generateHistory,
   Habit,
   PlannerItem,
   seedChallenges,
@@ -26,6 +25,19 @@ export const addDays = (d: Date, n: number) => {
 export type CompletionMap = Record<string, Record<string, number>>; // habitId -> dateKey -> amount
 export type DayStatus = 'skipped' | 'failed';
 export type StatusMap = Record<string, Record<string, DayStatus>>; // habitId -> dateKey -> status
+
+/** Duolingo-style streak insurance. Earned 1 per 7 consecutive perfect
+ *  days (cap 2); a missed day consumes one at rollover before the streak
+ *  resets. `runLength` is the live consecutive-perfect counter. */
+export type StreakFreezes = {
+  available: number;
+  usedOn: string[];
+  runLength: number;
+};
+
+/** Persisted perfect-day streak, maintained ONLY by rollDays (no 84-day
+ *  cap — histories are chart data, this is the source of truth). */
+export type StreakCounter = { current: number; best: number };
 
 /** App Lock (Screen Time shield) preferences; tokens live natively. */
 export type AppLockPrefs = {
@@ -69,8 +81,18 @@ type State = {
   statuses: StatusMap;
   moods: Record<string, string>; // dateKey -> emoji
   planner: PlannerItem[];
-  /** habit histories synthesized once: habitId -> 83 days (0/1), oldest first */
+  /** per-habit day fractions 0..1, oldest first, 83 slots; written ONLY by
+   *  rollDays (index 82 = yesterday). Chart data — never the streak source. */
   histories: Record<string, number[]>;
+  streakFreezes: StreakFreezes;
+  streak: StreakCounter;
+  /** dateKey of the last fully-rolled day; rollDays iterates every elapsed
+   *  day after it (calendar dateKeys, never ms math — DST-safe). */
+  lastRolledDay: string;
+  /** one-time upgrade reconciliation latch (10A: synthetic days zeroed) */
+  historyReconciled: boolean;
+  /** roll every ended day into histories/counter/freezes in ONE set(). */
+  rollDays: (now?: Date) => void;
   /** latch so the perfect-day congrats shows once per day */
   congratsShownOn: string | null;
   /** device integrations (personal app) */
@@ -132,13 +154,10 @@ type State = {
   reset: () => void;
 };
 
-const buildHistories = (habits: Habit[]): Record<string, number[]> =>
-  Object.fromEntries(
-    habits.map(h => [
-      h.id,
-      generateHistory(h.historySeed ?? 1, h.historyRate ?? 0),
-    ]),
-  );
+/** 10A seed honesty: fresh installs start with EMPTY history — no
+ *  synthetic data props up the streak and Reset can never satisfy App Lock. */
+const zeroHistories = (habits: Habit[]): Record<string, number[]> =>
+  Object.fromEntries(habits.map(h => [h.id, Array(83).fill(0)]));
 
 const initial = () => ({
   onboarded: false,
@@ -157,14 +176,15 @@ const initial = () => ({
   habits: seedHabits,
   challenges: seedChallenges,
   joinedChallengeIds: [] as string[],
-  completions: {
-    water: { [todayKey()]: 500 },
-    meditate: { [todayKey()]: 30 },
-  } as CompletionMap,
+  completions: {} as CompletionMap,
   statuses: {} as StatusMap,
   moods: {} as Record<string, string>,
   planner: seedPlanner(todayKey(), toDateKey(addDays(new Date(), 1))),
-  histories: buildHistories(seedHabits),
+  histories: zeroHistories(seedHabits),
+  streakFreezes: { available: 0, usedOn: [], runLength: 0 } as StreakFreezes,
+  streak: { current: 0, best: 0 } as StreakCounter,
+  lastRolledDay: toDateKey(addDays(new Date(), -1)),
+  historyReconciled: true,
   congratsShownOn: null,
   healthConnected: false,
   calendarConnected: false,
@@ -174,6 +194,68 @@ const initial = () => ({
     { pickups?: number; socialMin?: number; sleepMinutes?: number }
   >,
 });
+
+/** Single-slot corrupt-snapshot dump (E4: overwrite in place, never grow). */
+export const CORRUPT_DUMP_KEY = 'routiner-corrupt-dump';
+
+/**
+ * Storage wrapper (eng outside-voice corrections 1-3):
+ * - getItem parse-checks the raw snapshot itself; a corrupt payload is
+ *   captured to CORRUPT_DUMP_KEY and null is returned, so zustand hydrates
+ *   defaults and hydration SUCCEEDS — onFinishHydration always fires.
+ * - setItem catches write failures loudly (persist discards rejections).
+ */
+export const storageBackend = {
+  getItem: async (name: string): Promise<string | null> => {
+    const raw = await AsyncStorage.getItem(name);
+    if (raw == null) {
+      return null;
+    }
+    try {
+      JSON.parse(raw);
+      return raw;
+    } catch {
+      try {
+        await AsyncStorage.setItem(CORRUPT_DUMP_KEY, raw);
+      } catch {
+        // dump write failed too — nothing more we can do silently-safely
+      }
+      console.error(
+        `[store] corrupt snapshot captured to ${CORRUPT_DUMP_KEY}; hydrating defaults`,
+      );
+      return null;
+    }
+  },
+  setItem: async (name: string, value: string): Promise<void> => {
+    try {
+      await AsyncStorage.setItem(name, value);
+    } catch (e) {
+      console.error('[store] persist write FAILED (quota?):', e);
+    }
+  },
+  removeItem: (name: string) => AsyncStorage.removeItem(name),
+};
+
+const routinerStorage = createJSONStorage(() => storageBackend);
+
+/**
+ * Versioned migrations — NEVER returns initial(); a version bump must never
+ * wipe data. v3 adds the rollover/freeze/counter bookkeeping with frozen
+ * defaults; missing older fields fall back via zustand's shallow merge.
+ */
+export const migrateStore = (persisted: unknown, version: number) => {
+  const s = (persisted ?? {}) as Record<string, unknown>;
+  if (version < 3) {
+    return {
+      ...s,
+      streakFreezes: { available: 0, usedOn: [], runLength: 0 },
+      streak: { current: 0, best: 0 },
+      lastRolledDay: todayKey(),
+      historyReconciled: false,
+    };
+  }
+  return s;
+};
 
 export const useStore = create<State>()(
   persist(
@@ -324,13 +406,119 @@ export const useStore = create<State>()(
       deletePlannerItem: id =>
         set({ planner: get().planner.filter(t => t.id !== id) }),
 
+      /*
+       * Day rollover — the ONLY writer of histories/streak/freezes.
+       *
+       *   lastRolledDay ──▶ day+1 ──▶ ... ──▶ yesterday     (today never rolls)
+       *        │  per day: fraction → histories (shift left, append)
+       *        │           perfect(habits+tasks) → counter/freezes:
+       *        │             vacation? no-op
+       *        │             perfect? current++, runLength++ (7 ⇒ +1 freeze, cap 2)
+       *        │             missed?  freeze available? consume : current = 0
+       *        └─ ONE set() commits everything (batched — no per-day writes)
+       */
+      rollDays: (now = new Date()) => {
+        const s = get();
+        const today = toDateKey(now);
+        const yesterday = toDateKey(addDays(now, -1));
+        // Clock regression (westward travel / manual change): never roll
+        // backwards, never double-roll.
+        if (s.lastRolledDay >= yesterday && s.historyReconciled) {
+          return;
+        }
+
+        let histories = s.histories;
+        let freezes = { ...s.streakFreezes, usedOn: [...s.streakFreezes.usedOn] };
+        let counter = { ...s.streak };
+        let reconciled = s.historyReconciled;
+
+        const daySlice = {
+          completions: s.completions,
+          statuses: s.statuses,
+          habits: s.habits,
+          planner: s.planner,
+        };
+
+        if (!reconciled) {
+          // One-time upgrade honesty pass (10A): rebuild all 83 slots from
+          // real data; days without data become zero (synthetic days die).
+          const rebuilt: Record<string, number[]> = {};
+          for (const h of s.habits) {
+            rebuilt[h.id] = Array.from({ length: 83 }, (_, i) =>
+              progressFor(s.completions, h, toDateKey(addDays(now, i - 83))),
+            );
+          }
+          histories = rebuilt;
+          // Seed the counter from the real consecutive perfect run ending
+          // yesterday; runLength starts 0 (no retroactive freeze accrual).
+          let run = 0;
+          for (let back = 1; back <= 83; back++) {
+            if (dayPerfect(daySlice, toDateKey(addDays(now, -back)))) {
+              run++;
+            } else {
+              break;
+            }
+          }
+          counter = { current: run, best: Math.max(s.streak.best, run) };
+          freezes = { ...freezes, runLength: 0 };
+          reconciled = true;
+        } else {
+          // Roll every fully-ended day after lastRolledDay (capped at 83,
+          // the histories window size) — calendar dateKeys, no ms math.
+          let cursor = new Date(`${s.lastRolledDay}T00:00`);
+          let guard = 0;
+          while (guard++ < 83) {
+            cursor = addDays(cursor, 1);
+            const key = toDateKey(cursor);
+            if (key >= today) {
+              break;
+            }
+            const next: Record<string, number[]> = {};
+            for (const h of s.habits) {
+              next[h.id] = [
+                ...(histories[h.id] ?? Array(83).fill(0)).slice(1),
+                progressFor(s.completions, h, key),
+              ];
+            }
+            histories = next;
+            if (s.prefs.vacationMode) {
+              continue; // vacation: no break, no consume, no accrual
+            }
+            if (dayPerfect(daySlice, key)) {
+              counter.current += 1;
+              counter.best = Math.max(counter.best, counter.current);
+              freezes.runLength += 1;
+              if (freezes.runLength >= 7 && freezes.available < 2) {
+                freezes.available += 1;
+                freezes.runLength = 0;
+              }
+            } else if (freezes.available > 0) {
+              freezes.available -= 1;
+              freezes.usedOn.push(key);
+              freezes.runLength = 0;
+            } else {
+              counter.current = 0;
+              freezes.runLength = 0;
+            }
+          }
+        }
+
+        set({
+          histories,
+          streakFreezes: freezes,
+          streak: counter,
+          lastRolledDay: yesterday,
+          historyReconciled: reconciled,
+        });
+      },
+
       reset: () => set(initial()),
     }),
     {
       name: 'routiner-store',
-      version: 2,
-      storage: createJSONStorage(() => AsyncStorage),
-      migrate: () => initial() as unknown as State,
+      version: 3,
+      storage: routinerStorage,
+      migrate: migrateStore as (p: unknown, v: number) => State,
     },
   ),
 );
@@ -407,42 +595,58 @@ export const historyDayFraction = (
       habits.length
     : 0;
 
-type StreakSlice = {
-  histories: Record<string, number[]>;
-  habits: Habit[];
+type DaySlice = {
   completions: CompletionMap;
   statuses: StatusMap;
+  habits: Habit[];
   planner: PlannerItem[];
 };
 
+type StreakSlice = DaySlice & {
+  histories: Record<string, number[]>;
+  streak: StreakCounter;
+};
+
 /**
- * A perfect day (Duolingo-style streak rules): every active habit done AND
- * every one of today's tasks checked off. Time blocks don't gate the streak.
+ * CANONICAL day completeness (E2): average habit fraction 0..1 for a date.
+ * The one definition charts, banners, and rollover all share.
  */
-export const perfectToday = (s: StreakSlice) => {
-  const active = s.habits.filter(h => activeOn(s.statuses, h));
+export const dayCompletion = (s: DaySlice, dateKey = todayKey()): number => {
+  const active = s.habits.filter(h => activeOn(s.statuses, h, dateKey));
+  if (!active.length) {
+    return 0;
+  }
+  return (
+    active.reduce((a, h) => a + progressFor(s.completions, h, dateKey), 0) /
+    active.length
+  );
+};
+
+/**
+ * CANONICAL day perfection (E2): every active habit done AND every task of
+ * that date checked off — the original "streaks count habits AND tasks"
+ * rule. Time blocks don't gate. Rollover feeds the counter from THIS.
+ */
+export const dayPerfect = (s: DaySlice, dateKey = todayKey()): boolean => {
+  const active = s.habits.filter(h => activeOn(s.statuses, h, dateKey));
   const habitsDone =
     active.length > 0 &&
-    active.every(h => doneOn(s.completions, s.statuses, h));
-  const tKey = todayKey();
+    active.every(h => doneOn(s.completions, s.statuses, h, dateKey));
   const tasksDone = s.planner
-    .filter(t => t.type === 'task' && t.date === tKey)
+    .filter(t => t.type === 'task' && t.date === dateKey)
     .every(t => t.done);
   return habitsDone && tasksDone;
 };
 
-/** Perfect-day streak ending today (today counts once habits + tasks are done). */
-export const dayStreak = (s: StreakSlice) => {
-  let streak = 0;
-  for (let i = 82; i >= 0; i--) {
-    if (historyDayFraction(s.histories, s.habits, i) >= 1) {
-      streak++;
-    } else {
-      break;
-    }
-  }
-  return perfectToday(s) ? streak + 1 : streak;
-};
+/** A perfect day today — delegates to the canonical selector. */
+export const perfectToday = (s: DaySlice) => dayPerfect(s, todayKey());
+
+/**
+ * Perfect-day streak ending today: the persisted counter (rollDays-owned,
+ * uncapped) plus today once it turns perfect.
+ */
+export const dayStreak = (s: StreakSlice) =>
+  s.streak.current + (perfectToday(s) ? 1 : 0);
 
 export const perfectDayCount = (s: StreakSlice) => {
   let n = 0;
@@ -463,7 +667,8 @@ export const totalOf = (
   },
   habit: Habit,
 ) =>
-  (s.histories[habit.id] ?? []).reduce((a, b) => a + b, 0) +
+  // histories hold 0..1 fractions — a day counts only when fully done (≥1)
+  (s.histories[habit.id] ?? []).reduce((a, b) => a + (b >= 1 ? 1 : 0), 0) +
   (doneOn(s.completions, s.statuses, habit) ? 1 : 0);
 
 /** Per-habit streak (consecutive history days + today). */
@@ -478,7 +683,8 @@ export const habitStreak = (
   const h = s.histories[habit.id] ?? [];
   let streak = 0;
   for (let i = h.length - 1; i >= 0; i--) {
-    if (h[i]) {
+    if (h[i] >= 1) {
+      // fractions: 0.5 must NOT extend a streak
       streak++;
     } else {
       break;
@@ -490,7 +696,9 @@ export const habitStreak = (
 /** 30-day completion rate percentage for a habit. */
 export const rate30 = (histories: Record<string, number[]>, habit: Habit) => {
   const h = histories[habit.id] ?? [];
-  return Math.round((h.slice(-30).reduce((a, b) => a + b, 0) / 30) * 100);
+  return Math.round(
+    (h.slice(-30).reduce((a, b) => a + (b >= 1 ? 1 : 0), 0) / 30) * 100,
+  );
 };
 
 /** Points: 1000 + streak*40 + perfectDays*25 + total completions (Ember formula). */

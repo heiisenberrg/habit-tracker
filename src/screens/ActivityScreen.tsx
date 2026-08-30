@@ -17,6 +17,7 @@ import { getLastNightSleep, SleepSummary } from '../services/health';
 import {
   activeOn,
   addDays,
+  dayCompletion,
   dayStreak,
   doneOn,
   historyDayFraction,
@@ -69,6 +70,7 @@ function ActivityScreen() {
     histories,
     statuses,
     completions,
+    planner,
     moods,
     wellbeing,
     setWellbeing,
@@ -130,14 +132,8 @@ function ActivityScreen() {
   const dayFractionFor = (d: Date): number | null => {
     const key = toDateKey(d);
     if (key === todayKey()) {
-      const active = habits.filter(h => activeOn(statuses, h));
-      if (!active.length) {
-        return 0;
-      }
-      return (
-        active.filter(h => doneOn(completions, statuses, h)).length /
-        active.length
-      );
+      // Canonical selector (E2) — same definition rollover writes with.
+      return dayCompletion({ completions, statuses, habits, planner }, key);
     }
     const diff = Math.round((today.getTime() - d.getTime()) / 86400000);
     if (diff < 1 || diff > 83) {

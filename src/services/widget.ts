@@ -29,8 +29,12 @@ export const pushStreakToWidget = (s: StreakSlice): void => {
     if (key === todayKey()) {
       done = perfectToday(s);
     } else if (d.getTime() < today.getTime()) {
+      // Local-midnight parses — bare `new Date('YYYY-MM-DD')` is UTC and
+      // shifts a day in negative-offset timezones (eng OV correction #4).
       const diff = Math.round(
-        (new Date(todayKey()).getTime() - new Date(key).getTime()) / 86400000,
+        (new Date(`${todayKey()}T00:00`).getTime() -
+          new Date(`${key}T00:00`).getTime()) /
+          86400000,
       );
       done =
         diff >= 1 && diff <= 83
