@@ -1,5 +1,29 @@
 # TODOS
 
+## Build
+
+### Device Release build + install (T14, blocked 2026-08-30)
+
+**What:** Rebuild and reinstall the Release app on Ajaykkumar's iPhone
+(device id 2BD53F45-8B43-56CE-87E6-BE52A34440E6).
+
+**Why blocked:** `security find-identity` shows ZERO valid code-signing
+identities — the iOS Development certificate for team QAW658347B is gone or
+expired (the last device build is from Aug 21). Its cached provisioning
+profile also predates the family-controls entitlement, which means the
+CURRENTLY INSTALLED device app cannot actually raise the Screen Time shield.
+
+**To fix (one sitting):** Xcode → Settings → Accounts → sign in to
+arajendran@lucidbots.com (mints a fresh cert), then:
+`cd ios && xcodebuild -workspace habittracker.xcworkspace -scheme habittracker -configuration Release -destination 'generic/platform=iOS' -derivedDataPath build-device -allowProvisioningUpdates build`
+and install with `xcrun devicectl device install app` while the iPhone is
+connected and unlocked. Doing the Shield activation (below) first makes it
+a single build.
+
+**Effort:** S (after re-auth)
+**Priority:** P1
+**Depends on:** Apple ID re-auth in Xcode
+
 ## Shield
 
 ### Activate the ShieldConfiguration extension (D8, auto-deferred 2026-08-30)
