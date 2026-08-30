@@ -93,6 +93,9 @@ type State = {
   historyReconciled: boolean;
   /** roll every ended day into histories/counter/freezes in ONE set(). */
   rollDays: (now?: Date) => void;
+  /** backup import: replaces persisted DATA fields explicitly — never
+   *  setState(x, true), which would strip every action (eng OV #2). */
+  importState: (data: Record<string, unknown>) => void;
   /** latch so the perfect-day congrats shows once per day */
   congratsShownOn: string | null;
   /** device integrations (personal app) */
@@ -197,6 +200,35 @@ const initial = () => ({
 
 /** Single-slot corrupt-snapshot dump (E4: overwrite in place, never grow). */
 export const CORRUPT_DUMP_KEY = 'routiner-corrupt-dump';
+
+/** The persisted DATA fields (no actions) — the export/import contract. */
+export const DATA_KEYS = [
+  'onboarded',
+  'user',
+  'mood',
+  'habits',
+  'challenges',
+  'joinedChallengeIds',
+  'completions',
+  'statuses',
+  'moods',
+  'planner',
+  'histories',
+  'congratsShownOn',
+  'healthConnected',
+  'calendarConnected',
+  'darkMode',
+  'wellbeing',
+  'challengeJoinedOn',
+  'inbox',
+  'prefs',
+  'appLock',
+  'zen',
+  'streakFreezes',
+  'streak',
+  'lastRolledDay',
+  'historyReconciled',
+] as const;
 
 /**
  * Storage wrapper (eng outside-voice corrections 1-3):
@@ -512,6 +544,16 @@ export const useStore = create<State>()(
         });
       },
 
+      importState: data => {
+        const patch: Record<string, unknown> = {};
+        for (const k of DATA_KEYS) {
+          if (k in data) {
+            patch[k] = data[k];
+          }
+        }
+        set(patch as Partial<State>);
+      },
+
       reset: () => set(initial()),
     }),
     {
@@ -522,6 +564,24 @@ export const useStore = create<State>()(
     },
   ),
 );
+
+/**
+ * Hydration gate (eng OV #1): hasHydrated() FIRST — onFinishHydration only
+ * fires for future hydrations, and with the getItem wrapper hydration always
+ * succeeds (corrupt stores hydrate defaults), so this can never deadlock.
+ */
+export const whenHydrated = async (): Promise<void> => {
+  const p = useStore.persist;
+  if (p.hasHydrated()) {
+    return;
+  }
+  await new Promise<void>(resolve => {
+    const unsub = p.onFinishHydration(() => {
+      unsub();
+      resolve();
+    });
+  });
+};
 
 /* ------------------------------ selectors ------------------------------ */
 

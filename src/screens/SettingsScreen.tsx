@@ -15,6 +15,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppText from '../components/AppText';
 import { IconButton } from '../components/common';
+import { afterMutation } from '../services/afterMutation';
 import {
   AppLockState,
   applyAppLock,
@@ -23,6 +24,13 @@ import {
   pickLockedApps,
   requestAppLockAuth,
 } from '../services/appLock';
+import {
+  applyBackup,
+  lastBackupAt,
+  mirrorBackup,
+  parseBackup,
+  shareExport,
+} from '../services/backup';
 import { connectCalendar } from '../services/deviceCalendar';
 import { connectHealth } from '../services/health';
 import {
@@ -90,6 +98,67 @@ function SettingsScreen() {
   useEffect(() => {
     getAppLockState().then(setLockInfo);
   }, []);
+
+  /* ------------------------------ Backup ------------------------------ */
+
+  const [backupAt, setBackupAt] = useState<string | null>(null);
+  useEffect(() => {
+    lastBackupAt().then(setBackupAt);
+  }, []);
+
+  const onExport = async () => {
+    await mirrorBackup(); // freshen the slot alongside the share
+    setBackupAt(await lastBackupAt());
+    await shareExport();
+  };
+
+  const onImport = () => {
+    if (Platform.OS !== 'ios') {
+      Alert.alert(
+        'Import',
+        'Paste-import is iOS-only for now — share a backup file to this device and open it in the app instead.',
+      );
+      return;
+    }
+    Alert.prompt(
+      'Import backup',
+      'Paste the backup JSON you exported earlier. Your current data is snapshotted first.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Validate',
+          onPress: (text?: string) => {
+            const parsed = parseBackup(text ?? '');
+            if (!parsed.ok) {
+              Alert.alert('Import failed', parsed.error);
+              return;
+            }
+            const habitsN = Array.isArray(parsed.state.habits)
+              ? (parsed.state.habits as unknown[]).length
+              : 0;
+            Alert.alert(
+              'Replace your data?',
+              `This backup (v${parsed.version}) holds ${habitsN} habits. ` +
+                'Your current data will be replaced (a pre-import snapshot is kept).',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Replace',
+                  style: 'destructive',
+                  onPress: async () => {
+                    await applyBackup(parsed.state);
+                    await afterMutation();
+                    Alert.alert('Import complete', 'Your data was restored.');
+                  },
+                },
+              ],
+            );
+          },
+        },
+      ],
+      'plain-text',
+    );
+  };
 
   /** Persist a prefs change and sync the Screen Time shield right away. */
   const syncAppLock = (patch: Partial<typeof appLock>) => {
@@ -505,6 +574,41 @@ function SettingsScreen() {
             </View>
           </>
         )}
+        <AppText variant="chip" color={colors.ink40}>
+          Backup
+        </AppText>
+        <View style={styles.group}>
+          <Pressable style={[styles.row, styles.rowBorder]} onPress={onExport}>
+            <View style={styles.iconChip}>
+              <AppText variant="body">📤</AppText>
+            </View>
+            <View style={styles.flex}>
+              <AppText variant="bodyMedium">Export backup</AppText>
+              <AppText variant="alt" color={colors.ink40}>
+                Share your data as JSON — the off-device copy
+              </AppText>
+            </View>
+            <AppText variant="body" color={colors.ink40}>
+              ›
+            </AppText>
+          </Pressable>
+          <Pressable style={styles.row} onPress={onImport}>
+            <View style={styles.iconChip}>
+              <AppText variant="body">📥</AppText>
+            </View>
+            <View style={styles.flex}>
+              <AppText variant="bodyMedium">Import backup</AppText>
+              <AppText variant="alt" color={colors.ink40}>
+                {backupAt
+                  ? `Last auto-backup: ${new Date(backupAt).toLocaleString()}`
+                  : 'No auto-backup yet — happens when you leave the app'}
+              </AppText>
+            </View>
+            <AppText variant="body" color={colors.ink40}>
+              ›
+            </AppText>
+          </Pressable>
+        </View>
         <AppText variant="chip" color={colors.ink40}>
           About
         </AppText>

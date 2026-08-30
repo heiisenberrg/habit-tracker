@@ -16,7 +16,12 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import RootNavigator from './src/navigation/RootNavigator';
 import { applyAppLock } from './src/services/appLock';
-import { resyncReminders } from './src/services/notifications';
+import { mirrorBackup } from './src/services/backup';
+import {
+  registerForegroundHandler,
+  resyncReminders,
+} from './src/services/notifications';
+import { scheduleRecap } from './src/services/recap';
 import { applyInterfaceStyle } from './src/services/theme';
 import { pushStreakToWidget } from './src/services/widget';
 import { useStore } from './src/store/useStore';
@@ -80,6 +85,28 @@ function App() {
       resyncReminders(habits);
     }
   }, [habits]);
+
+  // Foreground notification action presses (previously dropped — OV #10).
+  useEffect(() => registerForegroundHandler(), []);
+
+  // Auto-mirror the full store to the backup slot whenever the app leaves
+  // the foreground (8A: corruption guard; Export is the off-device copy).
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', st => {
+      if (st === 'background') {
+        mirrorBackup();
+      }
+    });
+    return () => sub.remove();
+  }, []);
+
+  // Evening recap stays truthful on the in-app path: re-arm on any change
+  // that alters its content (handler/quick-log paths use afterMutation).
+  const zen = useStore(s => s.zen);
+  const prefs = useStore(s => s.prefs);
+  useEffect(() => {
+    scheduleRecap();
+  }, [completions, statuses, planner, habits, zen, prefs]);
 
   // Apply the persisted dark-mode choice deterministically: on = dark, off = light.
   // __DEV__ guard (6A): release builds compile the harness constant away.

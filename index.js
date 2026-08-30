@@ -10,6 +10,7 @@ import { name as appName } from './app.json';
 import { runBackgroundAppLockCheck } from './src/services/appLock';
 import { registerBackgroundHandler } from './src/services/notifications';
 import { runBackgroundRainCheck } from './src/services/rainAlerts';
+import { runBackgroundRecapCheck } from './src/services/recap';
 
 registerBackgroundHandler();
 
@@ -26,6 +27,7 @@ BackgroundFetch.configure(
   async taskId => {
     await runBackgroundRainCheck();
     await runBackgroundAppLockCheck();
+    await runBackgroundRecapCheck();
     BackgroundFetch.finish(taskId);
   },
   taskId => BackgroundFetch.finish(taskId),
@@ -35,9 +37,13 @@ BackgroundFetch.configure(
 });
 
 // Android: keep checks running after the app is swiped away.
+// Android-only: fires when the app process is DEAD (headless runs reuse the
+// live runtime otherwise — HeadlessTask.java no-ops when RESUMED), so this
+// fresh store instance is always the sole writer (eng OV #7/E1 invariant).
 BackgroundFetch.registerHeadlessTask(async event => {
   await runBackgroundRainCheck();
   await runBackgroundAppLockCheck();
+  await runBackgroundRecapCheck();
   BackgroundFetch.finish(event.taskId);
 });
 
