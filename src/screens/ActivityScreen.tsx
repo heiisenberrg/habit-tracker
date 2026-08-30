@@ -203,6 +203,11 @@ function ActivityScreen() {
 
   const summary = [
     { label: 'Completed', value: `${completedInWindow}`, color: colors.ink },
+    {
+      label: 'Freezes held',
+      value: `🧊 ${store.streakFreezes.available}`,
+      color: colors.ink,
+    },
     { label: 'Points (all-time)', value: `🏅 ${points}`, color: '#B7791F' },
     { label: 'Streak (all-time)', value: `${streak} 🔥`, color: colors.ink },
     { label: 'Skipped', value: `${skipped}`, color: colors.ink60 },

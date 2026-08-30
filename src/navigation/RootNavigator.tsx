@@ -51,7 +51,7 @@ function MainTabs() {
   return (
     <Tabs.Navigator
       tabBar={props => <TabBar {...props} />}
-      initialRouteName={(DEBUG_TAB_ROUTE as any) ?? 'Home'}
+      initialRouteName={(__DEV__ ? (DEBUG_TAB_ROUTE as any) : null) ?? 'Home'}
       screenOptions={{ headerShown: false }}
     >
       <Tabs.Screen name="Home" component={HomeScreen} />
@@ -65,7 +65,9 @@ function RootNavigator() {
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName={(DEBUG_STACK_ROUTE as any) ?? 'Splash'}
+        initialRouteName={
+          (__DEV__ ? (DEBUG_STACK_ROUTE as any) : null) ?? 'Splash'
+        }
         screenOptions={{ headerShown: false }}
       >
         <Stack.Screen name="Splash" component={SplashScreen} />
@@ -93,7 +95,7 @@ function RootNavigator() {
         <Stack.Screen
           name="ChallengeDetail"
           component={ChallengeDetailScreen}
-          initialParams={(DEBUG_PARAMS as any) ?? undefined}
+          initialParams={(__DEV__ ? (DEBUG_PARAMS as any) : null) ?? undefined}
         />
         <Stack.Screen name="Settings" component={SettingsScreen} />
         <Stack.Screen name="Notifications" component={NotificationsScreen} />
@@ -101,7 +103,7 @@ function RootNavigator() {
         <Stack.Screen
           name="HabitDetail"
           component={HabitDetailScreen}
-          initialParams={(DEBUG_PARAMS as any) ?? undefined}
+          initialParams={(__DEV__ ? (DEBUG_PARAMS as any) : null) ?? undefined}
         />
       </Stack.Navigator>
     </NavigationContainer>

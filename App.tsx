@@ -82,7 +82,9 @@ function App() {
   }, [habits]);
 
   // Apply the persisted dark-mode choice deterministically: on = dark, off = light.
-  const applied = FORCE_SCHEME ?? (darkMode ? 'dark' : 'light');
+  // __DEV__ guard (6A): release builds compile the harness constant away.
+  const applied =
+    (__DEV__ ? FORCE_SCHEME : null) ?? (darkMode ? 'dark' : 'light');
   useEffect(() => {
     Appearance.setColorScheme(applied);
     applyInterfaceStyle(applied);

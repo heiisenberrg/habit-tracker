@@ -323,6 +323,11 @@ function HomeScreen() {
               >
                 {streak}
               </AppText>
+              {store.streakFreezes.available > 0 && (
+                <AppText variant="chip" color="#9BE8FF">
+                  🧊{store.streakFreezes.available}
+                </AppText>
+              )}
             </View>
             <Pressable
               style={styles.infoBtn}
