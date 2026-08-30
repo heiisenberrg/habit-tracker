@@ -1,7 +1,6 @@
 import { useNavigation } from '@react-navigation/native';
 import React, { useState } from 'react';
 import {
-  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -13,7 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppText from '../components/AppText';
 import { Card, IconButton, SectionHeader } from '../components/common';
 import { TimeCircleIcon } from '../components/icons';
-import { avatars, clubs, learningArticles } from '../data/seed';
+import { clubs, learningArticles } from '../data/seed';
 import { challengeProgress, useStore } from '../store/useStore';
 import {
   colors,
@@ -238,9 +237,6 @@ function ExploreScreen() {
                     <AppText variant="body">{c.emoji}</AppText>
                   </View>
                   <AppText variant="bodyMedium">{c.name}</AppText>
-                  <AppText variant="alt" color={colors.ink40}>
-                    {c.members}
-                  </AppText>
                 </Card>
               ))}
             </ScrollView>
@@ -292,32 +288,25 @@ function ExploreScreen() {
                       <AppText variant="chip" color={colors.blue40}>
                         {timeLeft(c.endsAt)}
                       </AppText>
-                      <View style={styles.progressTrack}>
-                        <View
-                          style={[
-                            styles.progressFill,
-                            { width: `${progress * 100}%` },
-                          ]}
-                        />
-                      </View>
-                      <AppText variant="chip" color={colors.blue40}>
-                        {joined ? 'Your progress' : 'Community'}{' '}
-                        {Math.round(progress * 100)}%
-                      </AppText>
-                      <View style={styles.joinedRow}>
-                        <Image source={avatars.a1} style={styles.joinAvatar} />
-                        {c.friendsJoined > 1 && (
-                          <Image
-                            source={avatars.a2}
-                            style={[styles.joinAvatar, styles.joinOverlap]}
-                          />
-                        )}
+                      {joined ? (
+                        <>
+                          <View style={styles.progressTrack}>
+                            <View
+                              style={[
+                                styles.progressFill,
+                                { width: `${progress * 100}%` },
+                              ]}
+                            />
+                          </View>
+                          <AppText variant="chip" color={colors.blue40}>
+                            Your progress {Math.round(progress * 100)}%
+                          </AppText>
+                        </>
+                      ) : (
                         <AppText variant="chip" color={colors.blue40}>
-                          {'  '}
-                          {c.friendsJoined}{' '}
-                          {c.friendsJoined === 1 ? 'friend' : 'friends'} joined
+                          {c.durationDays}-day challenge
                         </AppText>
-                      </View>
+                      )}
                     </View>
                   </Pressable>
                 );
@@ -474,15 +463,6 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   progressFill: { height: 4, borderRadius: 2, backgroundColor: colors.surface },
-  joinedRow: { flexDirection: 'row', alignItems: 'center' },
-  joinAvatar: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.7)',
-  },
-  joinOverlap: { marginLeft: -6 },
   learnRow: { flexDirection: 'row', gap: spacing.sm },
   learnCard: {
     flex: 1,

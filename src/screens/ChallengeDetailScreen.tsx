@@ -2,7 +2,6 @@ import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import React from 'react';
 import {
   Alert,
-  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -11,7 +10,6 @@ import {
 import LinearGradient from 'react-native-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppText from '../components/AppText';
-import { friends } from '../data/seed';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { challengeProgress, useStore } from '../store/useStore';
 import {
@@ -81,12 +79,6 @@ function ChallengeDetailScreen() {
     Math.max(1, Math.round(progress * durationDays)),
   );
 
-  const shownFriends = friends.slice(
-    0,
-    Math.min(challenge.friendsJoined, friends.length),
-  );
-  const extraFriends = challenge.friendsJoined - shownFriends.length;
-
   const handleJoin = () => {
     if (joined) {
       return;
@@ -138,30 +130,6 @@ function ChallengeDetailScreen() {
           <AppText variant="body" color={colors.blue40} center>
             {challengeDates(challenge.endsAt, durationDays)}
           </AppText>
-          <View style={styles.avatarRow}>
-            {shownFriends.map((f, i) => (
-              <Image
-                key={f.id}
-                source={f.avatar}
-                style={[styles.avatar, i > 0 && styles.avatarOverlap]}
-              />
-            ))}
-            {extraFriends > 0 && (
-              <View style={[styles.avatarExtra, styles.avatarOverlap]}>
-                <AppText variant="chip" color={colors.white}>
-                  +{extraFriends}
-                </AppText>
-              </View>
-            )}
-            <AppText
-              variant="alt"
-              color={colors.blue40}
-              style={styles.avatarCount}
-            >
-              {challenge.friendsJoined}{' '}
-              {challenge.friendsJoined === 1 ? 'friend' : 'friends'} joined
-            </AppText>
-          </View>
         </View>
         <AppText
           variant="body"
@@ -274,30 +242,6 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: screenPadding, gap: spacing.lg },
   hero: { alignItems: 'center', gap: spacing.sm, marginTop: spacing.md },
   heroEmoji: { fontSize: 48, lineHeight: 56 },
-  avatarRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: spacing.xs,
-  },
-  avatar: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.6)',
-  },
-  avatarOverlap: { marginLeft: -8 },
-  avatarExtra: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: 'rgba(255,255,255,0.25)',
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.6)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarCount: { marginLeft: spacing.sm },
   description: { paddingHorizontal: spacing.sm },
   joinButton: {
     backgroundColor: colors.surface,

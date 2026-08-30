@@ -1,5 +1,4 @@
 /** Seed content mirroring the Routiner Figma designs + Ember v3 feature set. */
-import { ImageSourcePropType } from 'react-native';
 
 export type HabitGoalUnit =
   | 'ML'
@@ -48,8 +47,9 @@ export type Challenge = {
   title: string;
   emoji: string;
   endsAt: string; // ISO datetime
+  /** Legacy field kept for persisted stores; no longer rendered. */
   friendsJoined: number;
-  /** Community-average progress shown before joining. */
+  /** Legacy pre-join progress kept for persisted stores; no longer rendered. */
   progress: number; // 0..1
   description: string;
   /** Days to complete once joined; drives the member's own progress. */
@@ -58,20 +58,6 @@ export type Challenge = {
    *  persisted before this field existed rehydrate without it. */
   tasks?: string[];
 };
-
-export type Friend = { id: string; name: string; avatar: ImageSourcePropType };
-
-export const avatars = {
-  a1: require('../assets/images/avatar1.png') as ImageSourcePropType,
-  a2: require('../assets/images/avatar2.png') as ImageSourcePropType,
-  a3: require('../assets/images/avatar3.png') as ImageSourcePropType,
-};
-
-export const friends: Friend[] = [
-  { id: 'f1', name: 'Jennifer', avatar: avatars.a1 },
-  { id: 'f2', name: 'Andrew', avatar: avatars.a2 },
-  { id: 'f3', name: 'Sophia', avatar: avatars.a3 },
-];
 
 export const MOOD_FACES = ['😡', '🙁', '😐', '🙂', '😍'] as const;
 
@@ -83,7 +69,7 @@ export const seedHabits: Habit[] = [
     type: 'good',
     goal: { amount: 2000, unit: 'ML' },
     step: 500,
-    friendIds: ['f1', 'f2', 'f3'],
+    friendIds: [],
     tracking: 'count',
     historySeed: 7,
     historyRate: 0.9,
@@ -95,7 +81,7 @@ export const seedHabits: Habit[] = [
     type: 'good',
     goal: { amount: 10000, unit: 'STEPS' },
     step: 2500,
-    friendIds: ['f1', 'f2'],
+    friendIds: [],
     tracking: 'count',
     historySeed: 11,
     historyRate: 0.68,
@@ -119,7 +105,7 @@ export const seedHabits: Habit[] = [
     type: 'good',
     goal: { amount: 30, unit: 'MIN' },
     step: 10,
-    friendIds: ['f1'],
+    friendIds: [],
     tracking: 'count',
     historySeed: 9,
     historyRate: 0.82,
@@ -132,10 +118,10 @@ export const seedChallenges: Challenge[] = [
     title: 'Best Runners! 🏃🏻',
     emoji: '🏃🏻',
     endsAt: new Date(Date.now() + (5 * 24 + 13) * 3600 * 1000).toISOString(),
-    friendsJoined: 2,
-    progress: 0.21,
+    friendsJoined: 0,
+    progress: 0,
     description:
-      'Run with friends and climb the leaderboard. The one with the most kilometers at the end of the week wins!',
+      'Run every day this week. Distance counts, consistency wins — beat your own best.',
     durationDays: 7,
     tasks: [
       'Run at least 2 km every day',
@@ -148,15 +134,15 @@ export const seedChallenges: Challenge[] = [
     title: 'Best Bikers! 🚴',
     emoji: '🚴',
     endsAt: new Date(Date.now() + (2 * 24 + 11) * 3600 * 1000).toISOString(),
-    friendsJoined: 1,
-    progress: 0.62,
+    friendsJoined: 0,
+    progress: 0,
     description:
-      'Ride every day this week — distance counts, consistency wins. Bring a friend along!',
+      'Ride every day this week — distance counts, consistency wins.',
     durationDays: 7,
     tasks: [
       'Ride every day this week',
       'At least 5 km per ride',
-      'Invite a friend to join',
+      'End the week at 35 km total',
     ],
   },
 ];
@@ -169,10 +155,10 @@ export const popularHabits = [
 ] as const;
 
 export const clubs = [
-  { emoji: '🧑‍💻', name: 'Code Daily', members: '462 members' },
-  { emoji: '🏃', name: 'Runners', members: '336 members' },
-  { emoji: '😻', name: 'Cat Lovers', members: '462 members' },
-  { emoji: '🌃', name: 'Night Owls', members: '+500 members' },
+  { emoji: '🧑‍💻', name: 'Code Daily' },
+  { emoji: '🏃', name: 'Runners' },
+  { emoji: '😻', name: 'Cat Lovers' },
+  { emoji: '🌃', name: 'Night Owls' },
 ] as const;
 
 export const learningArticles = [

@@ -32,8 +32,8 @@ const PAGES: Page[] = [
   },
   {
     image: require('../assets/Illustration-3.png'),
-    title: 'Stay Together\nand Strong',
-    body: 'Find friends to discuss common topics. Complete challenges together.',
+    title: 'Stay Consistent\nand Strong',
+    body: 'Take on challenges, protect your streak, and build routines that stick.',
   },
 ];
 

@@ -1,33 +1,18 @@
 import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useMemo, useState } from 'react';
-import {
-  ActionSheetIOS,
-  Linking,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  View,
-} from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppText from '../components/AppText';
-import HabitCard from '../components/HabitCard';
-import ProgressRing from '../components/ProgressRing';
-import { Card, IconButton, SectionHeader } from '../components/common';
-import {
-  CalendarIcon,
-  DotIcon,
-  NotificationIcon,
-  TimeCircleIcon,
-} from '../components/icons';
-import {
-  appLockConditionLabel,
-  appLockSatisfied,
-  zenActiveAt,
-} from '../services/appLock';
+import { IconButton } from '../components/common';
+import HabitsSection from '../components/home/HabitsSection';
+import HeroBanner from '../components/home/HeroBanner';
+import TasksSection from '../components/home/TasksSection';
+import ZenControls, { useZen } from '../components/home/ZenControls';
+import { DotIcon, NotificationIcon } from '../components/icons';
+import { appLockSatisfied } from '../services/appLock';
 import { fetchBlocksForDate } from '../services/deviceCalendar';
 import { getTodaySteps } from '../services/health';
-import { cancelReminder, resyncReminders } from '../services/notifications';
 import { checkRainForSchedule } from '../services/rainAlerts';
 import { getCurrentWeather, Weather } from '../services/weather';
 import {
@@ -82,6 +67,7 @@ function HomeScreen() {
   } = store;
   const [selected, setSelected] = useState(() => todayKey());
   const [weather, setWeather] = useState<Weather | null>(null);
+  const { zenOn, zenEndLabel, onZenPress } = useZen();
 
   const days = useMemo(() => weekAround(new Date()), []);
   const doneCount = completedCount(completions, habits, selected);
@@ -96,66 +82,7 @@ function HomeScreen() {
   const appLocked =
     store.appLock.enabled &&
     !appLockSatisfied(store.appLock, habits, completions, store.statuses);
-  const zenOn = zenActiveAt(store.zen.until);
-  const zenEndLabel = store.zen.until
-    ? `${String(new Date(store.zen.until).getHours()).padStart(
-        2,
-        '0',
-      )}:${String(new Date(store.zen.until).getMinutes()).padStart(2, '0')}`
-    : '';
 
-  /** Start a quiet session: pause our reminders; the App-level effect
-   *  raises the Screen Time shield from the new zen end-time. */
-  const startZen = (minutes: number) => {
-    const until = new Date(Date.now() + minutes * 60000).toISOString();
-    store.setZen({ until });
-    habits.filter(h => h.reminder?.enabled).forEach(h => cancelReminder(h.id));
-    if (store.zen.useFocusShortcut) {
-      Linking.openURL('shortcuts://run-shortcut?name=Routiner%20Zen').catch(
-        () => {},
-      );
-    }
-  };
-
-  const endZen = () => {
-    store.setZen({ until: null });
-    if (!store.prefs.vacationMode) {
-      resyncReminders(habits);
-    }
-  };
-
-  const ZEN_MINUTES = [15, 30, 60, 120];
-  const onZenPress = () => {
-    if (zenOn) {
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          title: `Zen until ${zenEndLabel}`,
-          options: ['End zen early', 'Keep going'],
-          destructiveButtonIndex: 0,
-          cancelButtonIndex: 1,
-        },
-        i => {
-          if (i === 0) {
-            endZen();
-          }
-        },
-      );
-      return;
-    }
-    ActionSheetIOS.showActionSheetWithOptions(
-      {
-        title: 'Quiet time for…',
-        message: 'Reminders pause and your locked apps stay shielded.',
-        options: ['15 minutes', '30 minutes', '1 hour', '2 hours', 'Cancel'],
-        cancelButtonIndex: 4,
-      },
-      i => {
-        if (i < 4) {
-          startZen(ZEN_MINUTES[i]);
-        }
-      },
-    );
-  };
   const dayTasks = planner
     .filter(t => t.date === selected)
     .sort((a, b) => ((a.time || '99') < (b.time || '99') ? -1 : 1));
@@ -273,91 +200,26 @@ function HomeScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Daily goal banner with quick actions: calendar · streak · mood */}
-        <View style={styles.infoBox}>
-          <LinearGradient
-            colors={gradients.blue}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 0.6, y: 1 }}
-            style={styles.gradientFill}
-          />
-          {/* Orbit rings, echoing the onboarding artwork */}
-          <View style={styles.orbitSm} pointerEvents="none" />
-          <View style={styles.orbitLg} pointerEvents="none" />
-          <View style={styles.infoTop}>
-            <ProgressRing size={56} strokeWidth={4} progress={dailyProgress}>
-              <AppText variant="bodyMedium" color={colors.white}>
-                {Math.round(dailyProgress * 100)}%
-              </AppText>
-            </ProgressRing>
-            <View style={styles.flex}>
-              <AppText variant="title" color={colors.white}>
-                {habits.length > 0 && doneCount === habits.length
-                  ? 'Perfect day — streak secured! 🔥'
-                  : doneCount === 0
-                  ? 'Fresh day. Start small.'
-                  : `Nice pace — ${habits.length - doneCount} to go`}
-              </AppText>
-              <AppText variant="alt" color={colors.blue40}>
-                {doneCount} of {habits.length} habits done today
-              </AppText>
-            </View>
-          </View>
-          <View style={styles.infoActions}>
-            <Pressable
-              style={styles.infoBtn}
-              onPress={() => navigation.navigate('Calendar')}
-            >
-              <CalendarIcon size={22} />
-            </Pressable>
-            <View style={styles.infoBtn}>
-              <AppText
-                variant="bodyMedium"
-                style={!perfect && styles.streakEmojiIdle}
-              >
-                🔥
-              </AppText>
-              <AppText
-                variant="bodyMedium"
-                color={perfect ? '#FFC736' : colors.white}
-              >
-                {streak}
-              </AppText>
-              {store.streakFreezes.available > 0 && (
-                <AppText variant="chip" color="#9BE8FF">
-                  🧊{store.streakFreezes.available}
-                </AppText>
-              )}
-            </View>
-            <Pressable
-              style={styles.infoBtn}
-              onPress={() => navigation.navigate('QuickActions')}
-            >
-              <AppText variant="h6">{mood}</AppText>
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={zenOn ? 'Zen session running' : 'Start zen'}
-              style={[styles.infoBtn, zenOn && styles.zenOn]}
-              onPress={onZenPress}
-            >
-              <AppText variant="bodyMedium">🧘</AppText>
-            </Pressable>
-          </View>
-        </View>
+        <HeroBanner
+          dailyProgress={dailyProgress}
+          doneCount={doneCount}
+          habitCount={habits.length}
+          streak={streak}
+          perfect={perfect}
+          freezes={store.streakFreezes.available}
+          mood={mood}
+          zenOn={zenOn}
+          onCalendar={() => navigation.navigate('Calendar')}
+          onMood={() => navigation.navigate('QuickActions')}
+          onZen={onZenPress}
+        />
 
-        {(zenOn || appLocked) && (
-          <View style={styles.lockChip}>
-            <AppText variant="alt" color={colors.ink60}>
-              {zenOn
-                ? `🧘 Zen until ${zenEndLabel} — reminders paused`
-                : `🔒 Apps locked ${appLockConditionLabel(
-                    store.appLock,
-                    habits,
-                  )}`}
-            </AppText>
-          </View>
-        )}
+        <ZenControls
+          zenOn={zenOn}
+          zenEndLabel={zenEndLabel}
+          appLocked={appLocked}
+          habits={habits}
+        />
 
         {/* Week strip with streak flames */}
         <ScrollView
@@ -403,96 +265,24 @@ function HomeScreen() {
           })}
         </ScrollView>
 
-        {/* Today's tasks */}
-        <View style={styles.section}>
-          <SectionHeader title="Tasks" />
-          {dayTasks.length === 0 && (
-            <Card style={styles.emptyCard}>
-              <AppText variant="alt" color={colors.ink40} center>
-                Nothing planned — add a task or block time from the calendar
-              </AppText>
-            </Card>
-          )}
-          {dayTasks.map(t => (
-            <Card key={t.id} style={styles.taskCard}>
-              {t.type === 'task' ? (
-                <Pressable
-                  onPress={() => togglePlannerItem(t.id)}
-                  style={[styles.checkbox, t.done && styles.checkboxDone]}
-                >
-                  {t.done && (
-                    <AppText variant="chip" color={colors.white}>
-                      ✓
-                    </AppText>
-                  )}
-                </Pressable>
-              ) : (
-                <TimeCircleIcon size={22} />
-              )}
-              <View style={styles.flex}>
-                <AppText
-                  variant="bodyMedium"
-                  color={t.done ? colors.ink40 : colors.ink}
-                  style={t.done && styles.struck}
-                >
-                  {t.title}
-                </AppText>
-                <View style={styles.taskMetaRow}>
-                  <AppText variant="alt" color={colors.ink40}>
-                    {t.time || (t.type === 'task' ? 'Any time' : '')}
-                  </AppText>
-                  {t.type === 'block' && (
-                    <View style={styles.blockChip}>
-                      <AppText variant="chip" color={colors.ink40}>
-                        time block
-                      </AppText>
-                    </View>
-                  )}
-                </View>
-              </View>
-              {t.type === 'task' && !t.done && (
-                <Pressable
-                  onPress={() =>
-                    movePlannerItem(
-                      t.id,
-                      toDateKey(addDays(new Date(`${t.date}T00:00`), 1)),
-                    )
-                  }
-                  style={styles.postponeChip}
-                >
-                  <AppText variant="chip" color={colors.blue}>
-                    +1d
-                  </AppText>
-                </Pressable>
-              )}
-              <Pressable hitSlop={8} onPress={() => deletePlannerItem(t.id)}>
-                <AppText variant="body" color={colors.ink20}>
-                  ✕
-                </AppText>
-              </Pressable>
-            </Card>
-          ))}
-        </View>
+        <TasksSection
+          tasks={dayTasks}
+          onToggle={togglePlannerItem}
+          onMove={movePlannerItem}
+          onDelete={deletePlannerItem}
+        />
 
-        {/* Habits */}
-        <View style={styles.section}>
-          <SectionHeader title="Habits" />
-          {habits.map(habit => (
-            <HabitCard
-              key={habit.id}
-              habit={habit}
-              amount={completions[habit.id]?.[selected] ?? 0}
-              onPress={() =>
-                navigation.navigate('HabitDetail', { id: habit.id })
-              }
-              onIncrement={() =>
-                trackingOf(habit) === 'check'
-                  ? toggleCheck(habit.id, selected)
-                  : increment(habit.id, selected)
-              }
-            />
-          ))}
-        </View>
+        <HabitsSection
+          habits={habits}
+          completions={completions}
+          selected={selected}
+          onPressHabit={id => navigation.navigate('HabitDetail', { id })}
+          onIncrement={habit =>
+            trackingOf(habit) === 'check'
+              ? toggleCheck(habit.id, selected)
+              : increment(habit.id, selected)
+          }
+        />
       </ScrollView>
 
       {/* Assistant FAB */}
@@ -543,7 +333,6 @@ const styles = StyleSheet.create({
     paddingVertical: 1,
     marginRight: spacing.sm,
   },
-  streakEmojiIdle: { opacity: 0.35 },
   content: {
     paddingHorizontal: screenPadding,
     paddingTop: spacing.md,
@@ -567,95 +356,12 @@ const styles = StyleSheet.create({
     fontSize: 9,
     lineHeight: 11,
   },
-  infoBox: {
-    gap: spacing.md,
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    overflow: 'hidden',
-  },
-  orbitSm: {
-    position: 'absolute',
-    width: 190,
-    height: 190,
-    borderRadius: 95,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.22)',
-    right: -48,
-    top: -74,
-  },
-  orbitLg: {
-    position: 'absolute',
-    width: 300,
-    height: 300,
-    borderRadius: 150,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
-    right: -102,
-    top: -128,
-  },
-  lockChip: {
-    alignSelf: 'center',
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-  },
-  zenOn: { backgroundColor: 'rgba(255,255,255,0.34)' },
-  infoTop: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  infoActions: { flexDirection: 'row', gap: spacing.sm },
-  infoBtn: {
-    flex: 1,
-    height: 44,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-    backgroundColor: 'rgba(255,255,255,0.16)',
-    borderRadius: radius.md,
-  },
   gradientFill: {
     position: 'absolute',
     left: 0,
     right: 0,
     top: 0,
     bottom: 0,
-  },
-  section: { gap: spacing.xs, alignSelf: 'stretch' },
-  emptyCard: { paddingVertical: spacing.md, alignSelf: 'stretch' },
-  taskCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    paddingVertical: spacing.md,
-    alignSelf: 'stretch',
-  },
-  checkbox: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 1.8,
-    borderColor: colors.borderStrong,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkboxDone: { backgroundColor: colors.blue, borderColor: colors.blue },
-  struck: { textDecorationLine: 'line-through' },
-  taskMetaRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  blockChip: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.sm,
-  },
-  postponeChip: {
-    borderWidth: 1,
-    borderColor: 'transparent',
-    backgroundColor: colors.blue10,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
   },
   fab: {
     position: 'absolute',
