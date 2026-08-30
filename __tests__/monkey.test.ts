@@ -147,16 +147,36 @@ const OPS: Array<() => void> = [
       ),
     }),
   () => useStore.getState().addInboxItem({ title: 'mk', body: 'note' }),
+  // Day rollover with a clock 0-2 days ahead (0 = same-day no-op; a later
+  // op with a smaller offset exercises the clock-regression guard).
+  () =>
+    useStore
+      .getState()
+      .rollDays(new Date(Date.now() + Math.floor(rng() * 3) * 86400000)),
 ];
 
 const checkInvariants = (label: string) => {
   const s = useStore.getState();
   const streak = dayStreak(s);
   expect(Number.isInteger(streak)).toBe(true);
-  expect(streak).toBeGreaterThanOrEqual(0);
-  expect(streak).toBeLessThanOrEqual(84);
+  // Uncapped counter (OV2): dayStreak is the persisted run plus at most
+  // today's in-progress perfect day.
+  expect(streak).toBeGreaterThanOrEqual(s.streak.current);
+  expect(streak).toBeLessThanOrEqual(s.streak.current + 1);
   expect(Number.isFinite(karma(s))).toBe(true);
   expect(typeof perfectToday(s)).toBe('boolean');
+
+  // Freeze + counter invariants (D6/OV2).
+  expect(Number.isInteger(s.streakFreezes.available)).toBe(true);
+  expect(s.streakFreezes.available).toBeGreaterThanOrEqual(0);
+  expect(s.streakFreezes.available).toBeLessThanOrEqual(2);
+  expect(s.streakFreezes.runLength).toBeGreaterThanOrEqual(0);
+  for (const used of s.streakFreezes.usedOn) {
+    expect(used).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  }
+  expect(Number.isInteger(s.streak.current)).toBe(true);
+  expect(s.streak.current).toBeGreaterThanOrEqual(0);
+  expect(s.streak.best).toBeGreaterThanOrEqual(s.streak.current);
 
   const done = completedCount(s.completions, s.habits);
   expect(done).toBeGreaterThanOrEqual(0);

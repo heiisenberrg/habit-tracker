@@ -201,6 +201,9 @@ const initial = () => ({
 /** Single-slot corrupt-snapshot dump (E4: overwrite in place, never grow). */
 export const CORRUPT_DUMP_KEY = 'routiner-corrupt-dump';
 
+/** Disambiguates planner ids minted within the same millisecond. */
+let plannerSeq = 0;
+
 /** The persisted DATA fields (no actions) — the export/import contract. */
 export const DATA_KEYS = [
   'onboarded',
@@ -422,7 +425,14 @@ export const useStore = create<State>()(
       },
 
       addPlannerItem: item =>
-        set({ planner: [...get().planner, { ...item, id: `t${Date.now()}` }] }),
+        set({
+          planner: [
+            ...get().planner,
+            // Date.now() alone collides when two adds land in the same
+            // millisecond (monkey-test finding); the sequence disambiguates.
+            { ...item, id: `t${Date.now()}-${plannerSeq++}` },
+          ],
+        }),
       togglePlannerItem: id =>
         set({
           planner: get().planner.map(t =>

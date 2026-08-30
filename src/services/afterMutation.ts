@@ -26,6 +26,7 @@ export const afterMutation = async (): Promise<void> => {
     planner: s.planner,
     histories: s.histories,
     streak: s.streak,
+    appLock: s.appLock,
   });
   await scheduleRecap();
 };

@@ -11,6 +11,8 @@ struct DayMark: Decodable, Hashable {
   let d: Bool
 }
 
+/// Consolidated `sharedState` payload (1A). Extra fields (lock, unlockHabit,
+/// updatedAt) are for the shield extension; Decodable ignores them here.
 struct StreakPayload: Decodable {
   let streak: Int
   let days: [DayMark]
@@ -22,14 +24,25 @@ struct StreakEntry: TimelineEntry {
   let days: [DayMark]
 }
 
+private func decodePayload(forKey key: String) -> StreakPayload? {
+  guard
+    let raw = UserDefaults(suiteName: appGroup)?.string(forKey: key),
+    let data = raw.data(using: .utf8)
+  else {
+    return nil
+  }
+  return try? JSONDecoder().decode(StreakPayload.self, from: data)
+}
+
 private func loadPayload() -> StreakEntry {
   let fallbackDays = ["M", "T", "W", "T", "F", "S", "S"].map {
     DayMark(l: $0, d: false)
   }
+  // Legacy "streakData" covers the window between the app update and the
+  // first launch that writes the consolidated key.
   guard
-    let raw = UserDefaults(suiteName: appGroup)?.string(forKey: "streakData"),
-    let data = raw.data(using: .utf8),
-    let payload = try? JSONDecoder().decode(StreakPayload.self, from: data)
+    let payload = decodePayload(forKey: "sharedState")
+      ?? decodePayload(forKey: "streakData")
   else {
     return StreakEntry(date: Date(), streak: 0, days: fallbackDays)
   }

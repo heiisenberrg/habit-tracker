@@ -117,7 +117,8 @@ function App() {
     applyInterfaceStyle(applied);
   }, [applied]);
 
-  // Keep the home-screen streak widget in sync with the store.
+  // Keep the shared widget/shield payload in sync with the store.
+  const appLock = useStore(s => s.appLock);
   useEffect(() => {
     pushStreakToWidget({
       habits,
@@ -126,13 +127,13 @@ function App() {
       planner,
       histories,
       streak,
+      appLock,
     });
-  }, [habits, completions, statuses, planner, histories, streak]);
+  }, [habits, completions, statuses, planner, histories, streak, appLock]);
 
   // App Lock: shield/unshield the picked apps as completions change —
   // finishing the unlock habit releases them immediately. A running zen
   // session keeps the shield up regardless.
-  const appLock = useStore(s => s.appLock);
   const zenUntil = useStore(s => s.zen.until);
   useEffect(() => {
     applyAppLock(appLock, habits, completions, statuses, zenUntil);

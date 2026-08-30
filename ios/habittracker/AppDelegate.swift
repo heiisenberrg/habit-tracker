@@ -77,18 +77,29 @@ class ThemeManager: NSObject {
   }
 }
 
-/// Streak data hand-off to the RoutinerWidget extension via the shared
-/// App Group; refreshes widget timelines whenever the app pushes new data.
+/// Consolidated `sharedState` hand-off to the RoutinerWidget (and, later,
+/// shield) extensions via the shared App Group. The defaults write always
+/// happens; timeline reloads are debounced to respect WidgetKit's daily
+/// reload budget, except when the lock state flipped (forceReload).
 @objc(WidgetBridge)
 class WidgetBridge: NSObject {
   private static let appGroup = "group.com.lucidbots.lucidbots"
+  private static let minReloadInterval: TimeInterval = 60
+  private static var lastReload: Date?
 
   @objc static func requiresMainQueueSetup() -> Bool { false }
 
-  @objc func setStreak(_ json: NSString) {
+  @objc func setSharedState(_ json: NSString, forceReload force: Bool) {
     UserDefaults(suiteName: WidgetBridge.appGroup)?
-      .set(json as String, forKey: "streakData")
-    WidgetCenter.shared.reloadAllTimelines()
+      .set(json as String, forKey: "sharedState")
+    let now = Date()
+    let due = WidgetBridge.lastReload.map {
+      now.timeIntervalSince($0) >= WidgetBridge.minReloadInterval
+    } ?? true
+    if force || due {
+      WidgetBridge.lastReload = now
+      WidgetCenter.shared.reloadAllTimelines()
+    }
   }
 }
 
