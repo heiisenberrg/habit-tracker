@@ -1,5 +1,35 @@
 # TODOS
 
+## Shield
+
+### Activate the ShieldConfiguration extension (D8, auto-deferred 2026-08-30)
+
+**What:** Register the ready-made RoutinerShield extension target and ship the
+custom Screen Time shield screen (labels/icon only, no buttons — v1 scope).
+
+**Why:** The shield currently shows Apple's generic screen; the custom copy
+names the unlock habit and its progress from the `sharedState` payload.
+
+**Context:** The provisioning spike (OV3) was blocked on credentials, not an
+entitlement refusal: Xcode's session for arajendran@lucidbots.com is expired,
+so no profile for `com.lucidbots.lucidbots.RoutinerShield` could be created.
+Everything else is DONE and committed: `ios/RoutinerShield/` (Swift data
+source reading `sharedState`, Info.plist, family-controls entitlements) and
+`ios/add-shield-target.rb`. The extension compiles clean for simulator.
+
+**To activate:**
+1. Xcode → Settings → Accounts → sign in to arajendran@lucidbots.com again.
+2. `cd ios && ruby add-shield-target.rb`
+3. Build once with `-allowProvisioningUpdates` (or from Xcode) so automatic
+   signing mints the profile; then rebuild + reinstall the device app.
+If Apple refuses the family-controls profile for the new bundle id, D8 stays
+deferred per plan OV3 (the main app already holds the entitlement, so a
+refusal is unlikely).
+
+**Effort:** S (once signed in)
+**Priority:** P2
+**Depends on:** Apple ID re-auth in Xcode
+
 ## Widget
 
 ### Lock-status widget upgrade (D10, deferred 2026-08-30 CEO review)
