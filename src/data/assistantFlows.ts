@@ -226,7 +226,111 @@ export const ROOT_MENU = {
     { label: '✅ Task / time block', value: 'task' },
     { label: '⏰ Daily reminder', value: 'reminder' },
     { label: '🚀 Quick add (one line)', value: 'quick' },
-  ] as { label: string; value: Flow['id'] }[],
+    { label: '💬 Quick log', value: 'log' },
+  ] as { label: string; value: Flow['id'] | 'log' }[],
+};
+
+/* --------------------------- quick-log parser --------------------------- */
+
+export type QuickLogHabit = {
+  id: string;
+  name: string;
+  goal: { unit: string };
+};
+
+export type QuickLogResult =
+  | { kind: 'match'; habitId: string; amount: number | null }
+  | { kind: 'ambiguous'; candidates: string[]; amount: number | null }
+  | { kind: 'none' };
+
+const INTENT_WORDS = new Set([
+  'done',
+  'did',
+  'log',
+  'logged',
+  'finish',
+  'finished',
+  'complete',
+  'completed',
+  'add',
+  'drank',
+  'drink',
+  'mark',
+  'my',
+  'the',
+  'a',
+  'an',
+  'of',
+]);
+
+/**
+ * NEW intent parser (D7 — NOT parseQuickAdd, which handles creation syntax).
+ * "done meditate" → complete; "500 ml" → amount matched by unit;
+ * "log 20 min reading" → amount + fuzzy name. Ambiguity is surfaced, never
+ * guessed; no match returns 'none' so the UI can offer to create.
+ */
+export const parseQuickLog = (
+  text: string,
+  habits: QuickLogHabit[],
+): QuickLogResult => {
+  const raw = text.trim().toLowerCase();
+  if (!raw || habits.length === 0) {
+    return { kind: 'none' };
+  }
+  const amountMatch = raw.match(/\b(\d+(?:\.\d+)?)\b/);
+  const amount = amountMatch ? Number(amountMatch[1]) : null;
+
+  const tokens = raw
+    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+    .split(/\s+/)
+    .filter(t => t && !INTENT_WORDS.has(t) && !/^\d+(\.\d+)?$/.test(t));
+
+  const tokenSet = new Set(tokens);
+  const nameScores = habits.map(h => {
+    const nameTokens = h.name.toLowerCase().split(/\s+/);
+    const hits = nameTokens.filter(
+      nt =>
+        tokenSet.has(nt) ||
+        // Symmetric prefix: "medit" → "meditate" AND "reading"/"walked" →
+        // "read"/"walk". The ≥3 guard keeps stray short tokens from matching.
+        tokens.some(
+          t =>
+            (nt.startsWith(t) && t.length >= 3) ||
+            (t.startsWith(nt) && nt.length >= 3),
+        ),
+    ).length;
+    return { id: h.id, hits };
+  });
+  const best = Math.max(...nameScores.map(s => s.hits));
+  const nameMatches = nameScores.filter(s => s.hits > 0 && s.hits === best);
+
+  if (nameMatches.length === 1) {
+    return { kind: 'match', habitId: nameMatches[0].id, amount };
+  }
+  if (nameMatches.length > 1) {
+    return {
+      kind: 'ambiguous',
+      candidates: nameMatches.map(m => m.id),
+      amount,
+    };
+  }
+  // No name match — try the unit ("500 ml" → the one ML habit).
+  if (amount != null) {
+    const unitMatches = habits.filter(h =>
+      tokens.includes(h.goal.unit.toLowerCase()),
+    );
+    if (unitMatches.length === 1) {
+      return { kind: 'match', habitId: unitMatches[0].id, amount };
+    }
+    if (unitMatches.length > 1) {
+      return {
+        kind: 'ambiguous',
+        candidates: unitMatches.map(h => h.id),
+        amount,
+      };
+    }
+  }
+  return { kind: 'none' };
 };
 
 /**
