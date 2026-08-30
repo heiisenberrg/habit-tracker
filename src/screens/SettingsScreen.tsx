@@ -1,0 +1,556 @@
+import { useNavigation } from '@react-navigation/native';
+import React, { useEffect, useState } from 'react';
+import {
+  ActionSheetIOS,
+  Alert,
+  Appearance,
+  Platform,
+  Pressable,
+  ScrollView,
+  Share,
+  StyleSheet,
+  Switch,
+  View,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import AppText from '../components/AppText';
+import { IconButton } from '../components/common';
+import {
+  AppLockState,
+  applyAppLock,
+  appLockConditionLabel,
+  getAppLockState,
+  pickLockedApps,
+  requestAppLockAuth,
+} from '../services/appLock';
+import { connectCalendar } from '../services/deviceCalendar';
+import { connectHealth } from '../services/health';
+import {
+  cancelReminder,
+  resyncReminders,
+  scheduleDailyReminder,
+} from '../services/notifications';
+import { applyInterfaceStyle } from '../services/theme';
+import { useStore } from '../store/useStore';
+import {
+  cardShadow,
+  colors,
+  radius,
+  screenPadding,
+  spacing,
+} from '../theme/theme';
+
+type Row = {
+  key: string;
+  label: string;
+  icon: string;
+  type: 'link' | 'toggle';
+};
+
+const GENERAL: Row[] = [
+  { key: 'dark', label: 'Dark Mode', icon: '🌙', type: 'toggle' },
+  { key: 'notifications', label: 'Notifications', icon: '🔔', type: 'link' },
+  { key: 'sounds', label: 'Sounds', icon: '🔊', type: 'toggle' },
+  { key: 'vacation', label: 'Vacation Mode', icon: '🏝', type: 'toggle' },
+];
+
+const ABOUT: Row[] = [
+  { key: 'share', label: 'Share with Friends', icon: '↗', type: 'link' },
+  { key: 'about', label: 'About Us', icon: 'ℹ️', type: 'link' },
+];
+
+const APP_VERSION: string = require('../../package.json').version;
+
+/** Settings per the Figma "Profile & Settings" section. */
+function SettingsScreen() {
+  const navigation = useNavigation<any>();
+  const insets = useSafeAreaInsets();
+  const {
+    healthConnected,
+    calendarConnected,
+    setIntegration,
+    habits,
+    updateHabit,
+    darkMode,
+    setDarkMode,
+    prefs,
+    setPref,
+    appLock,
+    setAppLock,
+    completions,
+    statuses,
+    zen,
+    setZen,
+  } = useStore();
+  const reminderHabits = habits.filter(h => h.reminder);
+
+  /* ------------------------------ App Lock ------------------------------ */
+
+  const [lockInfo, setLockInfo] = useState<AppLockState | null>(null);
+  useEffect(() => {
+    getAppLockState().then(setLockInfo);
+  }, []);
+
+  /** Persist a prefs change and sync the Screen Time shield right away. */
+  const syncAppLock = (patch: Partial<typeof appLock>) => {
+    const next = { ...appLock, ...patch };
+    setAppLock(patch);
+    applyAppLock(next, habits, completions, statuses).then(() =>
+      getAppLockState().then(setLockInfo),
+    );
+  };
+
+  const toggleAppLock = async (on: boolean) => {
+    if (!on) {
+      syncAppLock({ enabled: false });
+      return;
+    }
+    const ok = await requestAppLockAuth();
+    if (!ok) {
+      Alert.alert(
+        'Screen Time access needed',
+        'App Lock uses Apple Screen Time and needs permission on a real ' +
+          'iPhone with iOS 16 or newer. The simulator cannot enforce locks.',
+      );
+      return;
+    }
+    let info = await getAppLockState();
+    if (info.apps + info.categories === 0) {
+      await pickLockedApps();
+      info = await getAppLockState();
+    }
+    setLockInfo(info);
+    if (info.apps + info.categories === 0) {
+      Alert.alert('No apps picked', 'Choose at least one app to lock.');
+      return;
+    }
+    syncAppLock({
+      enabled: true,
+      habitId:
+        appLock.condition === 'habit'
+          ? appLock.habitId ?? habits[0]?.id ?? null
+          : appLock.habitId,
+    });
+  };
+
+  const chooseLockedApps = async () => {
+    await pickLockedApps();
+    const info = await getAppLockState();
+    setLockInfo(info);
+    applyAppLock(appLock, habits, completions, statuses);
+  };
+
+  const UNLOCK_TIMES = ['12:00', '18:00', '21:00'];
+  const chooseUnlockCondition = () => {
+    if (Platform.OS !== 'ios') {
+      return;
+    }
+    const options = [
+      ...habits.map(h => `${h.emoji} After “${h.name}” is done`),
+      '✅ After all habits are done',
+      ...UNLOCK_TIMES.map(t => `🕐 Daily at ${t}`),
+      'Cancel',
+    ];
+    ActionSheetIOS.showActionSheetWithOptions(
+      {
+        title: 'Apps unlock…',
+        options,
+        cancelButtonIndex: options.length - 1,
+      },
+      idx => {
+        if (idx === options.length - 1) {
+          return;
+        }
+        if (idx < habits.length) {
+          syncAppLock({ condition: 'habit', habitId: habits[idx].id });
+        } else if (idx === habits.length) {
+          syncAppLock({ condition: 'all' });
+        } else {
+          syncAppLock({
+            condition: 'time',
+            until: UNLOCK_TIMES[idx - habits.length - 1],
+          });
+        }
+      },
+    );
+  };
+
+  const toggleReminder = async (habitId: string, on: boolean) => {
+    const habit = habits.find(h => h.id === habitId);
+    if (!habit?.reminder) {
+      return;
+    }
+    updateHabit(habitId, {
+      reminder: { ...habit.reminder, enabled: on },
+    });
+    if (on) {
+      // During vacation mode keep the flag but don't schedule — turning
+      // vacation off resyncs every enabled reminder.
+      if (prefs.vacationMode) {
+        Alert.alert(
+          'Vacation mode is on',
+          'This reminder will start again when you turn vacation mode off.',
+        );
+        return;
+      }
+      const ok = await scheduleDailyReminder(
+        habitId,
+        habit.name,
+        habit.reminder.time,
+      );
+      if (!ok) {
+        // Roll the flag back so the switch doesn't claim a reminder
+        // that was never scheduled.
+        updateHabit(habitId, {
+          reminder: { ...habit.reminder, enabled: false },
+        });
+        Alert.alert(
+          'Notifications disabled',
+          'Allow notifications for Routiner to get reminders.',
+        );
+      }
+    } else {
+      cancelReminder(habitId);
+    }
+  };
+  /**
+   * Vacation mode pauses every scheduled reminder without forgetting them:
+   * ON cancels the OS triggers, OFF re-creates them from the store.
+   */
+  const toggleVacation = (on: boolean) => {
+    setPref('vacationMode', on);
+    if (on) {
+      habits
+        .filter(h => h.reminder?.enabled)
+        .forEach(h => cancelReminder(h.id));
+    } else {
+      resyncReminders(habits);
+    }
+  };
+
+  const onRowPress = (key: string) => {
+    if (key === 'notifications') {
+      navigation.navigate('Notifications');
+    } else if (key === 'share') {
+      Share.share({
+        message:
+          'I’m building better habits with Routiner, a simple habit tracker. Join me and let’s keep our streaks going! 🌱',
+      }).catch(() => {});
+    } else if (key === 'about') {
+      Alert.alert(
+        `Routiner v${APP_VERSION}`,
+        'A small personal habit tracker: build good habits, quit bad ones, and keep the streak alive. Your data stays on this device.',
+      );
+    }
+  };
+
+  const toggleHealth = async (on: boolean) => {
+    if (!on) {
+      setIntegration('healthConnected', false);
+      return;
+    }
+    const ok = await connectHealth();
+    setIntegration('healthConnected', ok);
+    if (!ok) {
+      Alert.alert(
+        'Apple Health unavailable',
+        'Health access could not be enabled on this device.',
+      );
+    }
+  };
+
+  const toggleCalendar = async (on: boolean) => {
+    if (!on) {
+      setIntegration('calendarConnected', false);
+      return;
+    }
+    const ok = await connectCalendar();
+    setIntegration('calendarConnected', ok);
+    if (!ok) {
+      Alert.alert(
+        'Calendar unavailable',
+        'Calendar access could not be enabled on this device.',
+      );
+    }
+  };
+
+  const renderRow = (row: Row, isLast: boolean) => (
+    <Pressable
+      key={row.key}
+      onPress={() => onRowPress(row.key)}
+      disabled={row.type === 'toggle'}
+      style={[styles.row, !isLast && styles.rowBorder]}
+    >
+      <View style={styles.iconChip}>
+        <AppText variant="body">{row.icon}</AppText>
+      </View>
+      <AppText variant="bodyMedium" style={styles.flex}>
+        {row.label}
+      </AppText>
+      {row.type === 'toggle' ? (
+        <Switch
+          value={
+            row.key === 'dark'
+              ? darkMode
+              : row.key === 'sounds'
+              ? prefs.sounds
+              : prefs.vacationMode
+          }
+          onValueChange={v => {
+            if (row.key === 'dark') {
+              setDarkMode(v);
+              Appearance.setColorScheme(v ? 'dark' : 'light');
+              applyInterfaceStyle(v ? 'dark' : 'light');
+            } else if (row.key === 'sounds') {
+              setPref('sounds', v);
+            } else {
+              toggleVacation(v);
+            }
+          }}
+          trackColor={{ true: colors.green, false: colors.ink10 }}
+        />
+      ) : (
+        <AppText variant="body" color={colors.ink40}>
+          ›
+        </AppText>
+      )}
+    </Pressable>
+  );
+
+  return (
+    <View style={styles.screen}>
+      <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
+        <IconButton size={40} onPress={() => navigation.goBack()}>
+          <AppText variant="h6">‹</AppText>
+        </IconButton>
+        <AppText variant="h6">Settings</AppText>
+      </View>
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: insets.bottom + spacing.xl },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
+        <AppText variant="chip" color={colors.ink40}>
+          General
+        </AppText>
+        <View style={styles.group}>
+          {GENERAL.map((r, i) => renderRow(r, i === GENERAL.length - 1))}
+        </View>
+        <AppText variant="chip" color={colors.ink40}>
+          Connected Services
+        </AppText>
+        <View style={styles.group}>
+          <View style={[styles.row, styles.rowBorder]}>
+            <View style={styles.iconChip}>
+              <AppText variant="body">❤️</AppText>
+            </View>
+            <View style={styles.flex}>
+              <AppText variant="bodyMedium">Apple Health</AppText>
+              <AppText variant="alt" color={colors.ink40}>
+                Auto-track steps into your Walk habit
+              </AppText>
+            </View>
+            <Switch
+              value={healthConnected}
+              onValueChange={toggleHealth}
+              trackColor={{ true: colors.green, false: colors.ink10 }}
+            />
+          </View>
+          <View style={styles.row}>
+            <View style={styles.iconChip}>
+              <AppText variant="body">🗓</AppText>
+            </View>
+            <View style={styles.flex}>
+              <AppText variant="bodyMedium">Device Calendar</AppText>
+              <AppText variant="alt" color={colors.ink40}>
+                Import meetings as time blocks
+              </AppText>
+            </View>
+            <Switch
+              value={calendarConnected}
+              onValueChange={toggleCalendar}
+              trackColor={{ true: colors.green, false: colors.ink10 }}
+            />
+          </View>
+        </View>
+        <AppText variant="chip" color={colors.ink40}>
+          Focus
+        </AppText>
+        <View style={styles.group}>
+          <View style={[styles.row, appLock.enabled && styles.rowBorder]}>
+            <View style={styles.iconChip}>
+              <AppText variant="body">🔒</AppText>
+            </View>
+            <View style={styles.flex}>
+              <AppText variant="bodyMedium">App Lock</AppText>
+              <AppText variant="alt" color={colors.ink40}>
+                {appLock.enabled
+                  ? `Locked ${appLockConditionLabel(appLock, habits)}`
+                  : 'Block distracting apps until you earn them'}
+              </AppText>
+            </View>
+            <Switch
+              value={appLock.enabled}
+              onValueChange={toggleAppLock}
+              trackColor={{ true: colors.green, false: colors.ink10 }}
+            />
+          </View>
+          {appLock.enabled && (
+            <>
+              <Pressable
+                style={[styles.row, styles.rowBorder]}
+                onPress={chooseLockedApps}
+              >
+                <View style={styles.iconChip}>
+                  <AppText variant="body">📱</AppText>
+                </View>
+                <View style={styles.flex}>
+                  <AppText variant="bodyMedium">Locked apps</AppText>
+                  <AppText variant="alt" color={colors.ink40}>
+                    {lockInfo
+                      ? `${lockInfo.apps} app${
+                          lockInfo.apps === 1 ? '' : 's'
+                        }` +
+                        (lockInfo.categories
+                          ? ` · ${lockInfo.categories} categor${
+                              lockInfo.categories === 1 ? 'y' : 'ies'
+                            }`
+                          : '')
+                      : 'Loading…'}
+                  </AppText>
+                </View>
+                <AppText variant="body" color={colors.ink40}>
+                  ›
+                </AppText>
+              </Pressable>
+              <Pressable style={styles.row} onPress={chooseUnlockCondition}>
+                <View style={styles.iconChip}>
+                  <AppText variant="body">🔓</AppText>
+                </View>
+                <View style={styles.flex}>
+                  <AppText variant="bodyMedium">Unlocks</AppText>
+                  <AppText variant="alt" color={colors.ink40}>
+                    {appLockConditionLabel(appLock, habits)}
+                  </AppText>
+                </View>
+                <AppText variant="body" color={colors.ink40}>
+                  ›
+                </AppText>
+              </Pressable>
+            </>
+          )}
+        </View>
+        <View style={styles.group}>
+          <View style={styles.row}>
+            <View style={styles.iconChip}>
+              <AppText variant="body">🧘</AppText>
+            </View>
+            <View style={styles.flex}>
+              <AppText variant="bodyMedium">Zen runs iOS Focus</AppText>
+              <AppText variant="alt" color={colors.ink40}>
+                Starting zen also triggers your “Routiner Zen” Shortcut
+              </AppText>
+            </View>
+            <Switch
+              value={zen.useFocusShortcut}
+              onValueChange={v => {
+                setZen({ useFocusShortcut: v });
+                if (v) {
+                  Alert.alert(
+                    'One-time setup',
+                    'In the Shortcuts app, create a shortcut named ' +
+                      '“Routiner Zen” with the action “Set Focus” (e.g. Do ' +
+                      'Not Disturb until turned off). Starting zen will run ' +
+                      'it, silencing every app’s notifications system-wide.',
+                  );
+                }
+              }}
+              trackColor={{ true: colors.green, false: colors.ink10 }}
+            />
+          </View>
+        </View>
+        {reminderHabits.length > 0 && (
+          <>
+            <AppText variant="chip" color={colors.ink40}>
+              Reminders
+            </AppText>
+            <View style={styles.group}>
+              {reminderHabits.map((h, i) => (
+                <View
+                  key={h.id}
+                  style={[
+                    styles.row,
+                    i < reminderHabits.length - 1 && styles.rowBorder,
+                  ]}
+                >
+                  <View style={styles.iconChip}>
+                    <AppText variant="body">{h.emoji}</AppText>
+                  </View>
+                  <View style={styles.flex}>
+                    <AppText variant="bodyMedium">{h.name}</AppText>
+                    <AppText variant="alt" color={colors.ink40}>
+                      🕐 {h.reminder?.time} ·{' '}
+                      {prefs.vacationMode ? 'Paused (vacation)' : 'Every day'}
+                    </AppText>
+                  </View>
+                  <Switch
+                    value={h.reminder?.enabled ?? false}
+                    onValueChange={v => toggleReminder(h.id, v)}
+                    trackColor={{ true: colors.green, false: colors.ink10 }}
+                  />
+                </View>
+              ))}
+            </View>
+          </>
+        )}
+        <AppText variant="chip" color={colors.ink40}>
+          About
+        </AppText>
+        <View style={styles.group}>
+          {ABOUT.map((r, i) => renderRow(r, i === ABOUT.length - 1))}
+        </View>
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  screen: { flex: 1, backgroundColor: colors.background },
+  flex: { flex: 1 },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingHorizontal: screenPadding,
+    paddingBottom: spacing.md,
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  content: { padding: screenPadding, gap: spacing.md },
+  group: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.lg,
+    ...cardShadow,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.md,
+  },
+  rowBorder: { borderBottomWidth: 1, borderBottomColor: colors.border },
+  iconChip: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});
+
+export default SettingsScreen;
