@@ -1,0 +1,3 @@
+nodeLinker: hoisted
+patchedDependencies:
+  react-native-health: patches/react-native-health.patch

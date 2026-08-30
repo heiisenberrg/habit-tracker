@@ -1,0 +1,13 @@
+diff --git a/RCTAppleHealthKit/RCTAppleHealthKit.m b/RCTAppleHealthKit/RCTAppleHealthKit.m
+index e8ddce176f6beda986e80244adafacc5e9a2808f..a8da53eb9726905af44a3c13553cb76e141f0652 100644
+--- a/RCTAppleHealthKit/RCTAppleHealthKit.m
++++ b/RCTAppleHealthKit/RCTAppleHealthKit.m	
+@@ -840,8 +840,6 @@ RCT_EXPORT_METHOD(getClinicalRecords:(NSDictionary *)input callback:(RCTResponse
+ 
+ - (void)emitEventInternal:(NSNotification *)notification {
+   if (self.hasListeners) {
+-    self.callableJSModules = [RCTAppleHealthKit sharedJsModule];
+-    [self.callableJSModules setBridge:self.bridge];
+     [self sendEventWithName:notification.name
+                    body:notification.userInfo];
+   }
