@@ -8,34 +8,28 @@ appId: com.lucidbots.lucidbots
     visible: "Dark Mode"
     timeout: 8000
 - tapOn:
-    text: "Dark Mode"
-    index: 1
+    id: "switch-dark"
 - assertVisible:
-    text: "Dark Mode"
-    index: 1
+    id: "switch-dark"
     checked: true
 - takeScreenshot: d30-settings-dark
 - tapOn:
-    text: "Evening recap"
-    index: 1
+    id: "switch-recap"
 - takeScreenshot: d32-recap-toggle-prompt
 - tapOn:
     text: "Allow"
     optional: true
 - assertVisible:
-    text: "Evening recap"
-    index: 1
+    id: "switch-recap"
     checked: true
 - tapOn:
-    text: "Weather & rain alerts"
-    index: 1
+    id: "switch-weather"
 - takeScreenshot: d33-weather-toggle-prompt
 - tapOn:
     text: "Allow While Using App"
     optional: true
 - assertVisible:
-    text: "Weather & rain alerts"
-    index: 1
+    id: "switch-weather"
     checked: true
 - takeScreenshot: d34-settings-toggles-on
 - scrollUntilVisible:

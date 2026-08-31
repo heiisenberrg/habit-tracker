@@ -101,6 +101,7 @@ function PermissionRow({
   onValueChange,
   onOpenSettings,
   isLast,
+  testID,
 }: {
   icon: string;
   label: string;
@@ -111,6 +112,7 @@ function PermissionRow({
   onValueChange: (v: boolean) => void;
   onOpenSettings: () => void;
   isLast?: boolean;
+  testID: string;
 }) {
   return (
     <Pressable
@@ -133,6 +135,7 @@ function PermissionRow({
         </AppText>
       </View>
       <Switch
+        testID={testID}
         accessibilityLabel={label}
         accessibilityHint={blocked ? 'Blocked in iOS Settings' : undefined}
         value={value && !blocked}
@@ -542,6 +545,7 @@ function SettingsScreen() {
       </View>
       {row.type === 'toggle' ? (
         <Switch
+          testID={`switch-${row.key}`}
           accessibilityLabel={row.label}
           value={toggleValue(row.key)}
           onValueChange={v => onToggle(row.key, v)}
@@ -593,6 +597,7 @@ function SettingsScreen() {
             blocked={recapBlocked}
             onValueChange={toggleRecap}
             onOpenSettings={openIosSettings}
+            testID="switch-recap"
           />
           <PermissionRow
             icon="🌦"
@@ -603,6 +608,7 @@ function SettingsScreen() {
             blocked={weatherBlocked}
             onValueChange={toggleWeather}
             onOpenSettings={openIosSettings}
+            testID="switch-weather"
           />
           {renderRow(INBOX_ROW, true)}
         </View>

@@ -42,6 +42,10 @@ appId: com.lucidbots.lucidbots
 - extendedWaitUntil:
     visible: "Log Stretch"
     timeout: 10000
+- scrollUntilVisible:
+    element: "Log Stretch"
+    direction: DOWN
+    centerElement: true
 - takeScreenshot: c04-home-with-stretch
 - tapOn: "Log Stretch"
 - tapOn: "Log Stretch"
