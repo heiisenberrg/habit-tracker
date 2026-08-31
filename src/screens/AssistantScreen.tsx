@@ -78,6 +78,8 @@ function AssistantScreen() {
   });
   const [draft, setDraft] = useState('');
   const [customTime, setCustomTime] = useState(false);
+  // What the last wrap-up was for: the end chips speak the same language.
+  const [endKind, setEndKind] = useState<'log' | 'flow'>('flow');
   const [qlog, setQlog] = useState<{
     amount: number | null;
     candidates: string[];
@@ -163,6 +165,7 @@ function AssistantScreen() {
     await afterMutation();
     const done = next >= habit.goal.amount;
     const remaining = habit.goal.amount - next;
+    setEndKind('log');
     setChat(c => ({ ...c, mode: 'end' }));
     pushBot(
       done
@@ -299,6 +302,7 @@ function AssistantScreen() {
     } else {
       const flow = chat.flow;
       completeFlow(flow, answers).then(finalAnswers => {
+        setEndKind('flow');
         setChat({ flow, step: null, answers: finalAnswers, mode: 'end' });
         if (finalAnswers.reminderFailed !== 'yes') {
           pushBot(flow.summary(finalAnswers));
@@ -337,6 +341,12 @@ function AssistantScreen() {
     pushBot('On it — what’s next?');
   };
 
+  const logAnother = () => {
+    pushMe('Log another');
+    setChat({ flow: null, step: null, answers: {}, mode: 'qlog' });
+    pushBot('Go ahead — what else did you do?');
+  };
+
   /* ---------------------------- input routing ---------------------------- */
 
   const renderInput = () => {
@@ -356,10 +366,18 @@ function AssistantScreen() {
         return (
           <ChipRow
             options={[
-              { label: '✨ Add another', value: 'again' },
+              endKind === 'log'
+                ? { label: '💬 Log another', value: 'again' }
+                : { label: '✨ Add another', value: 'again' },
               { label: 'Done', value: 'done' },
             ]}
-            onPick={v => (v === 'again' ? restart() : navigation.goBack())}
+            onPick={v =>
+              v !== 'again'
+                ? navigation.goBack()
+                : endKind === 'log'
+                ? logAnother()
+                : restart()
+            }
           />
         );
       case 'qlog':

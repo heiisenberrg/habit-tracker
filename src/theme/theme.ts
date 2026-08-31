@@ -25,6 +25,11 @@ export const colors = {
   background: C('#F6F9FF', '#0E0F17'),
   ink: C('#040415', '#F2F2F7'), // Black 100
   ink60: C('#686873', '#A8A8B8'),
+  /**
+   * 2.6:1 on the light background — NOT for text under 16pt (use ink60).
+   * Reserve for glyphs, dividers and disabled affordances (design review
+   * 2026-08-31, decision 10A).
+   */
   ink40: C('#9B9BA1', '#8A8A99'),
   ink20: C('#CDCDD0', '#3E3F52'),
   ink10: C('#EAECF0', '#252638'),

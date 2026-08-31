@@ -38,7 +38,12 @@ appId: com.lucidbots.lucidbots
     visible: ".*(Logged!|complete).*"
     timeout: 6000
 - takeScreenshot: s25-quicklog-result
-- tapOn: "✨ Add another"
+- assertVisible: ".*Log another.*"
+- tapOn: "Done"
+- tapOn: "Ask Assistant"
+- extendedWaitUntil:
+    visible: ".*New habit.*"
+    timeout: 8000
 - tapOn: ".*New habit.*"
 - takeScreenshot: s26-assistant-habit-flow
 - tapOn: ".*Meditate every morning.*"

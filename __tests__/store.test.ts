@@ -38,6 +38,9 @@ test('setPref persists preferences; permission-owning toggles start OFF', () => 
     vacationMode: false,
     recap: false,
     weather: false,
+    locationDenied: false,
+    recapNudgeDismissed: false,
+    weatherNudgeDismissed: false,
   });
   useStore.getState().setPref('vacationMode', true);
   expect(useStore.getState().prefs.vacationMode).toBe(true);

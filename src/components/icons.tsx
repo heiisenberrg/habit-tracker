@@ -41,7 +41,8 @@ function makeIcon(base: number, layers: LayerSpec[]) {
               top: layer.t * s,
               width: layer.w * s,
               height: layer.h * s,
-            }}>
+            }}
+          >
             <SvgXml
               xml={dark ? darkXml(layer.xml) : layer.xml}
               width="100%"
@@ -54,7 +55,9 @@ function makeIcon(base: number, layers: LayerSpec[]) {
   };
 }
 
-export const HomeIcon = makeIcon(24, [{ xml: svg.homePri, l: 2.5, t: 2, w: 19, h: 20 }]);
+export const HomeIcon = makeIcon(24, [
+  { xml: svg.homePri, l: 2.5, t: 2, w: 19, h: 20 },
+]);
 
 export const DiscoveryIcon = makeIcon(24, [
   { xml: svg.discoverySec, l: 2, t: 2, w: 20, h: 20 },
@@ -92,9 +95,13 @@ export const TimeCircleIcon = makeIcon(24, [
   { xml: svg.timePri, l: 10.9, t: 6.93, w: 5.43, h: 8.89 },
 ]);
 
-export const TickSquareIcon = makeIcon(24, [{ xml: svg.tickPri, l: 7, t: 8, w: 10, h: 8 }]);
+export const TickSquareIcon = makeIcon(24, [
+  { xml: svg.tickPri, l: 7, t: 8, w: 10, h: 8 },
+]);
 
-export const PlusIcon = makeIcon(24, [{ xml: svg.plusPri, l: 6, t: 6, w: 12, h: 12 }]);
+export const PlusIcon = makeIcon(24, [
+  { xml: svg.plusPri, l: 6, t: 6, w: 12, h: 12 },
+]);
 
 /** Filled circular plus used as the tab bar center action (48pt). */
 export const PlusCircleIcon = makeIcon(48, [
@@ -104,3 +111,8 @@ export const PlusCircleIcon = makeIcon(48, [
 
 /** Small red notification dot. */
 export const DotIcon = makeIcon(8, [{ xml: svg.dot, l: 0, t: 0, w: 8, h: 8 }]);
+
+/** The Routiner mark as a quiet monochrome glyph (Home header → Assistant). */
+export const AssistantIcon = makeIcon(24, [
+  { xml: svg.assistantMark, l: 0, t: 0, w: 24, h: 24 },
+]);

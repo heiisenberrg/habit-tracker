@@ -1,11 +1,10 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import HabitCard from '../HabitCard';
-import { Card, SectionHeader } from '../common';
+import { SectionHeader } from '../common';
 import { Habit } from '../../data/seed';
 import { CompletionMap } from '../../store/useStore';
-import AppText from '../AppText';
-import { colors, spacing } from '../../theme/theme';
+import { spacing } from '../../theme/theme';
 
 type Props = {
   habits: Habit[];
@@ -23,16 +22,12 @@ function HabitsSection({
   onPressHabit,
   onIncrement,
 }: Props) {
+  if (habits.length === 0) {
+    return null; // the hero renders the dedicated empty state (3A)
+  }
   return (
     <View style={styles.section}>
       <SectionHeader title="Habits" />
-      {habits.length === 0 && (
-        <Card style={styles.emptyCard}>
-          <AppText variant="alt" color={colors.ink40} center>
-            No habits yet — tap ✨ in the header to add your first
-          </AppText>
-        </Card>
-      )}
       {habits.map(habit => (
         <HabitCard
           key={habit.id}
@@ -48,7 +43,6 @@ function HabitsSection({
 
 const styles = StyleSheet.create({
   section: { gap: spacing.xs, alignSelf: 'stretch' },
-  emptyCard: { paddingVertical: spacing.md, alignSelf: 'stretch' },
 });
 
 export default HabitsSection;

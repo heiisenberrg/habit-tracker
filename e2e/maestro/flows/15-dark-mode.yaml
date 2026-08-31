@@ -10,6 +10,10 @@ appId: com.lucidbots.lucidbots
 - tapOn:
     text: "Dark Mode"
     index: 1
+- assertVisible:
+    text: "Dark Mode"
+    index: 1
+    checked: true
 - takeScreenshot: d30-settings-dark
 - tapOn:
     text: "Evening recap"
@@ -18,6 +22,10 @@ appId: com.lucidbots.lucidbots
 - tapOn:
     text: "Allow"
     optional: true
+- assertVisible:
+    text: "Evening recap"
+    index: 1
+    checked: true
 - tapOn:
     text: "Weather & rain alerts"
     index: 1
@@ -25,6 +33,10 @@ appId: com.lucidbots.lucidbots
 - tapOn:
     text: "Allow While Using App"
     optional: true
+- assertVisible:
+    text: "Weather & rain alerts"
+    index: 1
+    checked: true
 - takeScreenshot: d34-settings-toggles-on
 - scrollUntilVisible:
     element: "App Lock"

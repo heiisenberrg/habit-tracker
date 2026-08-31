@@ -182,6 +182,27 @@ const isRealBirthdate = (s: string): boolean => {
 };
 
 /** Normalized habit name so "Drink water" matches seeded "Drink the water". */
+/** The tenth tile: not a habit, a door to the custom form after Finish. */
+const CUSTOM_ID = 'fh-custom';
+const CUSTOM_CHOICE: FirstHabit = {
+  id: CUSTOM_ID,
+  name: 'Something else',
+  emoji: '➕',
+  goal: { amount: 1, unit: 'TIMES' },
+  step: 1,
+};
+
+/** "2,000 ML a day" / "once a day" — the commitment, shown before it is made. */
+const goalLabel = (fh: FirstHabit): string => {
+  if (fh.id === CUSTOM_ID) {
+    return 'your own goal';
+  }
+  if (fh.goal.unit === 'TIMES') {
+    return fh.goal.amount === 1 ? 'once a day' : `${fh.goal.amount}× a day`;
+  }
+  return `${fh.goal.amount.toLocaleString()} ${fh.goal.unit.toLowerCase()} a day`;
+};
+
 const normHabit = (n: string) =>
   n
     .toLowerCase()
@@ -213,7 +234,7 @@ function CreateAccountScreen() {
   const ownedNames = new Set(habits.map(h => normHabit(h.name)));
   const firstChoices = FIRST_HABITS.filter(
     fh => !ownedNames.has(normHabit(fh.name)),
-  );
+  ).concat(CUSTOM_CHOICE);
   // Two sensible defaults pre-selected; the user owns the final set.
   const [selected, setSelected] = useState<string[]>(
     firstChoices
@@ -226,6 +247,9 @@ function CreateAccountScreen() {
           : [],
       ),
   );
+
+  const realSelected = selected.filter(id => id !== CUSTOM_ID);
+  const wantsCustom = selected.includes(CUSTOM_ID);
 
   const back = () => (step > 0 ? setStep(step - 1) : navigation.goBack());
 
@@ -269,13 +293,16 @@ function CreateAccountScreen() {
       );
     completeOnboarding();
     navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
+    if (wantsCustom) {
+      navigation.navigate('NewGoodHabit');
+    }
   };
 
   const next = () => (step < 2 ? setStep(step + 1) : finish());
   const nextDisabled =
     (step === 0 && (name.trim().length === 0 || !birthdateValid)) ||
     (step === 1 && gender === null) ||
-    (step === 2 && firstChoices.length > 0 && selected.length === 0);
+    (step === 2 && realSelected.length === 0 && !wantsCustom);
 
   return (
     <KeyboardAvoidingView
@@ -287,8 +314,10 @@ function CreateAccountScreen() {
           <AppText variant="h6">‹</AppText>
         </IconButton>
         <View>
-          <AppText variant="h6">Create Account</AppText>
-          {user.email.length > 0 && (
+          <AppText variant="h6">
+            {step === 2 ? 'Step 3 of 3' : 'Create Account'}
+          </AppText>
+          {step < 2 && user.email.length > 0 && (
             <AppText variant="chip" color={colors.ink40}>
               {user.email}
             </AppText>
@@ -383,11 +412,24 @@ function CreateAccountScreen() {
                         active ? s.filter(x => x !== fh.id) : [...s, fh.id],
                       )
                     }
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: active }}
+                    accessibilityLabel={`${fh.name}, ${goalLabel(fh)}`}
                     style={[styles.habitCard, active && styles.cardSelected]}
                   >
+                    {active && (
+                      <View style={styles.checkBadge}>
+                        <AppText variant="chip" color={colors.white}>
+                          ✓
+                        </AppText>
+                      </View>
+                    )}
                     <AppText style={styles.habitEmoji}>{fh.emoji}</AppText>
                     <AppText variant="bodyMedium" center>
                       {fh.name}
+                    </AppText>
+                    <AppText variant="alt" color={colors.ink60} center>
+                      {goalLabel(fh)}
                     </AppText>
                   </Pressable>
                 );
@@ -406,8 +448,21 @@ function CreateAccountScreen() {
         {step === 1 && gender === null && (
           <SecondaryButton label="Skip this step" onPress={() => setStep(2)} />
         )}
+        {step === 2 && nextDisabled && (
+          <AppText variant="alt" color={colors.ink60} center>
+            Pick at least one to start your perfect day
+          </AppText>
+        )}
         <PrimaryButton
-          label={step === 2 ? 'Finish' : 'Next'}
+          label={
+            step !== 2
+              ? 'Next'
+              : realSelected.length === 0
+              ? 'Continue'
+              : `Start with ${realSelected.length} habit${
+                  realSelected.length === 1 ? '' : 's'
+                }`
+          }
           disabled={nextDisabled}
           onPress={next}
         />
@@ -429,7 +484,12 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
   },
   body: { flex: 1 },
-  bodyContent: { padding: screenPadding, gap: spacing.xl },
+  bodyContent: {
+    padding: screenPadding,
+    gap: spacing.xl,
+    // room for the sticky footer so the last grid row never hides under it
+    paddingBottom: spacing.xl * 2,
+  },
   form: { gap: spacing.xl },
   field: { gap: spacing.xs },
   fieldRow: { flexDirection: 'row', alignItems: 'center' },
@@ -475,18 +535,29 @@ const styles = StyleSheet.create({
   },
   habitCard: {
     width: '46%',
-    flexGrow: 1,
+    flexGrow: 0,
     backgroundColor: colors.surface,
     borderWidth: 1.5,
-    borderColor: colors.white,
+    borderColor: colors.border,
     borderRadius: radius.md,
-    paddingVertical: spacing.xl,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.sm,
     alignItems: 'center',
-    gap: spacing.md,
-    ...cardShadow,
+    gap: spacing.xs,
   },
   habitEmoji: { fontSize: 36, lineHeight: 44 },
-  cardSelected: { borderColor: colors.blue },
+  cardSelected: { borderColor: colors.blue, backgroundColor: colors.blue10 },
+  checkBadge: {
+    position: 'absolute',
+    top: spacing.sm,
+    right: spacing.sm,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: colors.blue,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   footer: {
     paddingHorizontal: screenPadding,
     paddingTop: spacing.sm,

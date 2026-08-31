@@ -95,3 +95,8 @@ export const timeSec = `<svg preserveAspectRatio="none" overflow="visible" style
 <path id="&#240;&#159;&#140;&#136; Secondary" fill-rule="evenodd" clip-rule="evenodd" d="M20 10C20 15.524 15.523 20 10 20C4.477 20 0 15.524 0 10C0 4.478 4.477 0 10 0C15.523 0 20 4.478 20 10" fill="#EBECFF"/>
 </svg>`;
 
+/** Routiner mark, monochrome: ring + heart (hand-drawn, not a Figma export). */
+export const assistantMark = `<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<circle cx="12" cy="12" r="10" stroke="#040415" stroke-width="1.8"/>
+<path d="M12 17.2C11.7 17.2 11.4 17.1 11.2 16.9L7.6 13.4C6.3 12.1 6.3 10 7.6 8.7C8.8 7.5 10.7 7.5 11.9 8.6L12 8.7L12.1 8.6C13.3 7.5 15.2 7.5 16.4 8.7C17.7 10 17.7 12.1 16.4 13.4L12.8 16.9C12.6 17.1 12.3 17.2 12 17.2Z" fill="#040415"/>
+</svg>`;

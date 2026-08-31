@@ -7,9 +7,10 @@ import AppText from '../components/AppText';
 import { IconButton } from '../components/common';
 import HabitsSection from '../components/home/HabitsSection';
 import HeroBanner from '../components/home/HeroBanner';
+import NudgeCard from '../components/home/NudgeCard';
 import TasksSection from '../components/home/TasksSection';
 import ZenControls, { useZen } from '../components/home/ZenControls';
-import { DotIcon, NotificationIcon } from '../components/icons';
+import { AssistantIcon, DotIcon, NotificationIcon } from '../components/icons';
 import { appLockSatisfied } from '../services/appLock';
 import { fetchBlocksForDate } from '../services/deviceCalendar';
 import { getTodaySteps } from '../services/health';
@@ -20,6 +21,7 @@ import {
   completedCount,
   dayStreak,
   historyDayFraction,
+  perfectDayCount,
   perfectToday,
   progressFor,
   toDateKey,
@@ -128,6 +130,34 @@ function HomeScreen() {
   // plus rain heads-ups for today's scheduled tasks and habit reminders.
   // Re-runs when the schedule changes; forecast is cached and alerts
   // dedupe per item per day, so repeats are cheap and quiet.
+  // One-time, in-context nudge cards (design review 7A): recap after the
+  // first perfect day or the first evening with work left; weather once a
+  // time block exists. Never more than one at a time; recap first.
+  const prefs = store.prefs;
+  const eveningWithWorkLeft =
+    new Date().getHours() >= 18 &&
+    habits.length > 0 &&
+    doneCount < habits.length;
+  const nudge: {
+    text: string;
+    dismissKey: 'recapNudgeDismissed' | 'weatherNudgeDismissed';
+  } | null =
+    !prefs.recap &&
+    !prefs.recapNudgeDismissed &&
+    (perfectDayCount(store) > 0 || eveningWithWorkLeft)
+      ? {
+          text: 'Want a 9 pm check-in on days like this? Turn on Evening recap.',
+          dismissKey: 'recapNudgeDismissed',
+        }
+      : !prefs.weather &&
+        !prefs.weatherNudgeDismissed &&
+        planner.some(t => t.type === 'block')
+      ? {
+          text: 'Rain heads-ups before your time blocks? Turn on Weather & rain alerts.',
+          dismissKey: 'weatherNudgeDismissed',
+        }
+      : null;
+
   // The Settings "Weather & rain alerts" toggle owns the location ask
   // (App.tsx configures skipPermissionRequests). Off → no chip, no checks.
   const weatherOn = store.prefs.weather;
@@ -192,7 +222,7 @@ function HomeScreen() {
             accessibilityLabel="Ask Assistant"
             onPress={() => navigation.navigate('Assistant')}
           >
-            <AppText variant="h6">✨</AppText>
+            <AssistantIcon size={24} />
           </IconButton>
           <IconButton
             accessibilityLabel="Notifications"
@@ -228,7 +258,17 @@ function HomeScreen() {
           onCalendar={() => navigation.navigate('Calendar')}
           onMood={() => navigation.navigate('QuickActions')}
           onZen={onZenPress}
+          onAddHabit={() => navigation.navigate('NewGoodHabit')}
+          onAssistant={() => navigation.navigate('Assistant')}
         />
+
+        {nudge && (
+          <NudgeCard
+            text={nudge.text}
+            onTurnOn={() => navigation.navigate('Settings')}
+            onDismiss={() => store.setPref(nudge.dismissKey, true)}
+          />
+        )}
 
         <ZenControls
           zenOn={zenOn}
@@ -281,12 +321,14 @@ function HomeScreen() {
           })}
         </ScrollView>
 
-        <TasksSection
-          tasks={dayTasks}
-          onToggle={togglePlannerItem}
-          onMove={movePlannerItem}
-          onDelete={deletePlannerItem}
-        />
+        {(habits.length > 0 || dayTasks.length > 0) && (
+          <TasksSection
+            tasks={dayTasks}
+            onToggle={togglePlannerItem}
+            onMove={movePlannerItem}
+            onDelete={deletePlannerItem}
+          />
+        )}
 
         <HabitsSection
           habits={habits}

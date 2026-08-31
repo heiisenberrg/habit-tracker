@@ -1,9 +1,11 @@
-import { useNavigation } from '@react-navigation/native';
-import React, { useEffect, useState } from 'react';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActionSheetIOS,
   Alert,
   Appearance,
+  AppState,
+  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -35,6 +37,7 @@ import { connectCalendar } from '../services/deviceCalendar';
 import { connectHealth } from '../services/health';
 import {
   cancelReminder,
+  hasNotificationPermission,
   requestNotificationPermission,
   resyncReminders,
   scheduleDailyReminder,
@@ -56,16 +59,29 @@ type Row = {
   label: string;
   icon: string;
   type: 'link' | 'toggle';
+  subtitle?: string;
 };
 
 const GENERAL: Row[] = [
   { key: 'dark', label: 'Dark Mode', icon: '🌙', type: 'toggle' },
-  { key: 'notifications', label: 'Notifications', icon: '🔔', type: 'link' },
   { key: 'sounds', label: 'Sounds', icon: '🔊', type: 'toggle' },
-  { key: 'vacation', label: 'Vacation Mode', icon: '🏝', type: 'toggle' },
-  { key: 'recap', label: 'Evening recap', icon: '🌆', type: 'toggle' },
-  { key: 'weather', label: 'Weather & rain alerts', icon: '🌦', type: 'toggle' },
+  {
+    key: 'vacation',
+    label: 'Vacation Mode',
+    icon: '🏝',
+    type: 'toggle',
+    subtitle: 'Pauses every reminder without forgetting them',
+  },
 ];
+
+/** The inbox row lives with the nudges it collects (design review 2A). */
+const INBOX_ROW: Row = {
+  key: 'notifications',
+  label: 'Inbox',
+  icon: '📥',
+  type: 'link',
+  subtitle: 'Delivered nudges and heads-ups',
+};
 
 const ABOUT: Row[] = [
   { key: 'share', label: 'Share with Friends', icon: '↗', type: 'link' },
@@ -73,6 +89,60 @@ const ABOUT: Row[] = [
 ];
 
 const APP_VERSION: string = require('../../package.json').version;
+
+/** Row with a permission-owning switch: subtitle, pending, blocked state (6A). */
+function PermissionRow({
+  icon,
+  label,
+  subtitle,
+  value,
+  isPending,
+  blocked,
+  onValueChange,
+  onOpenSettings,
+  isLast,
+}: {
+  icon: string;
+  label: string;
+  subtitle: string;
+  value: boolean;
+  isPending: boolean;
+  blocked: boolean;
+  onValueChange: (v: boolean) => void;
+  onOpenSettings: () => void;
+  isLast?: boolean;
+}) {
+  return (
+    <Pressable
+      accessible={false}
+      onPress={blocked ? onOpenSettings : undefined}
+      disabled={!blocked}
+      style={[styles.row, !isLast && styles.rowBorder]}
+    >
+      <View style={styles.iconChip}>
+        <AppText variant="body">{icon}</AppText>
+      </View>
+      <View style={styles.flex}>
+        <AppText variant="bodyMedium">{label}</AppText>
+        <AppText variant="alt" color={blocked ? colors.red : colors.ink60}>
+          {blocked
+            ? 'Off — blocked in iOS Settings. Tap to open Settings ›'
+            : isPending
+            ? 'Waiting for permission…'
+            : subtitle}
+        </AppText>
+      </View>
+      <Switch
+        accessibilityLabel={label}
+        accessibilityHint={blocked ? 'Blocked in iOS Settings' : undefined}
+        value={value && !blocked}
+        disabled={isPending}
+        onValueChange={onValueChange}
+        trackColor={{ true: colors.green, false: colors.ink10 }}
+      />
+    </Pressable>
+  );
+}
 
 /** Settings per the Figma "Profile & Settings" section. */
 function SettingsScreen() {
@@ -349,6 +419,32 @@ function SettingsScreen() {
   };
 
   /* --------------- permission-owning toggles (eng review 2026-08-31) ---- */
+  // Visible states for the two rows (design review 6A): pending while the OS
+  // dialog is up, denied with a recovery path, and "ON but blocked" after a
+  // later revoke or the v4 migration — re-checked on focus and foreground.
+  const [pending, setPending] = useState<{
+    recap?: boolean;
+    weather?: boolean;
+  }>({});
+  const [notifGranted, setNotifGranted] = useState<boolean | null>(null);
+  const refreshPermissionStatus = useCallback(() => {
+    hasNotificationPermission().then(setNotifGranted);
+  }, []);
+  useFocusEffect(refreshPermissionStatus);
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', st => {
+      if (st === 'active') {
+        refreshPermissionStatus();
+      }
+    });
+    return () => sub.remove();
+  }, [refreshPermissionStatus]);
+  const recapBlocked = notifGranted === false && prefs.recap;
+  const weatherBlocked = prefs.locationDenied;
+  const openIosSettings = () => {
+    Linking.openSettings().catch(() => {});
+  };
+
   // Boot and background paths never raise an OS dialog; these two switches
   // are the only places (besides creating a habit reminder) that do.
   const toggleRecap = async (on: boolean) => {
@@ -357,7 +453,13 @@ function SettingsScreen() {
       scheduleRecap();
       return;
     }
+    if (pending.recap) {
+      return;
+    }
+    setPending(p => ({ ...p, recap: true }));
     const ok = await requestNotificationPermission();
+    setPending(p => ({ ...p, recap: false }));
+    setNotifGranted(ok);
     setPref('recap', ok);
     if (ok) {
       scheduleRecap();
@@ -365,6 +467,10 @@ function SettingsScreen() {
       Alert.alert(
         'Notifications are off',
         'Allow notifications for Routiner in iOS Settings to get the evening recap.',
+        [
+          { text: 'Not now', style: 'cancel' },
+          { text: 'Open Settings', onPress: openIosSettings },
+        ],
       );
     }
   };
@@ -374,12 +480,22 @@ function SettingsScreen() {
       setPref('weather', false);
       return;
     }
+    if (pending.weather) {
+      return;
+    }
+    setPending(p => ({ ...p, weather: true }));
     const ok = await requestLocationPermission();
+    setPending(p => ({ ...p, weather: false }));
+    setPref('locationDenied', !ok);
     setPref('weather', ok);
     if (!ok) {
       Alert.alert(
         'Location is off',
         'Allow location for Routiner in iOS Settings to show local weather and rain alerts.',
+        [
+          { text: 'Not now', style: 'cancel' },
+          { text: 'Open Settings', onPress: openIosSettings },
+        ],
       );
     }
   };
@@ -389,11 +505,7 @@ function SettingsScreen() {
       ? darkMode
       : key === 'sounds'
       ? prefs.sounds
-      : key === 'vacation'
-      ? prefs.vacationMode
-      : key === 'recap'
-      ? prefs.recap
-      : prefs.weather;
+      : prefs.vacationMode;
 
   const onToggle = (key: string, v: boolean) => {
     if (key === 'dark') {
@@ -402,12 +514,8 @@ function SettingsScreen() {
       applyInterfaceStyle(v ? 'dark' : 'light');
     } else if (key === 'sounds') {
       setPref('sounds', v);
-    } else if (key === 'vacation') {
-      toggleVacation(v);
-    } else if (key === 'recap') {
-      toggleRecap(v);
     } else {
-      toggleWeather(v);
+      toggleVacation(v);
     }
   };
 
@@ -424,9 +532,14 @@ function SettingsScreen() {
       <View style={styles.iconChip}>
         <AppText variant="body">{row.icon}</AppText>
       </View>
-      <AppText variant="bodyMedium" style={styles.flex}>
-        {row.label}
-      </AppText>
+      <View style={styles.flex}>
+        <AppText variant="bodyMedium">{row.label}</AppText>
+        {row.subtitle ? (
+          <AppText variant="alt" color={colors.ink60}>
+            {row.subtitle}
+          </AppText>
+        ) : null}
+      </View>
       {row.type === 'toggle' ? (
         <Switch
           accessibilityLabel={row.label}
@@ -466,6 +579,32 @@ function SettingsScreen() {
         </AppText>
         <View style={styles.group}>
           {GENERAL.map((r, i) => renderRow(r, i === GENERAL.length - 1))}
+        </View>
+        <AppText variant="chip" color={colors.ink40}>
+          Nudges
+        </AppText>
+        <View style={styles.group}>
+          <PermissionRow
+            icon="🌆"
+            label="Evening recap"
+            subtitle="A 9 pm check-in when the day isn’t perfect yet"
+            value={prefs.recap}
+            isPending={!!pending.recap}
+            blocked={recapBlocked}
+            onValueChange={toggleRecap}
+            onOpenSettings={openIosSettings}
+          />
+          <PermissionRow
+            icon="🌦"
+            label="Weather & rain alerts"
+            subtitle="Local forecast on Home, heads-up before rain"
+            value={prefs.weather}
+            isPending={!!pending.weather}
+            blocked={weatherBlocked}
+            onValueChange={toggleWeather}
+            onOpenSettings={openIosSettings}
+          />
+          {renderRow(INBOX_ROW, true)}
         </View>
         <AppText variant="chip" color={colors.ink40}>
           Connected Services

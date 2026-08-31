@@ -48,7 +48,8 @@ appId: com.lucidbots.lucidbots
 - tapOn: ".*Next"
 - assertVisible: "Choose your first habits"
 - takeScreenshot: s10-create-3
-- tapOn: ".*Finish"
+- assertVisible: ".*Start with 2 habits.*"
+- tapOn: ".*Start with 2 habits.*"
 - extendedWaitUntil:
     visible: "Hi, Aj.*"
     timeout: 10000

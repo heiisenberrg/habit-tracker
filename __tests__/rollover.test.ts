@@ -85,7 +85,14 @@ describe('migrateStore', () => {
     expect(out.completions).toEqual(v2.completions);
     expect(out.darkMode).toBe(true);
     // v4 adds the permission-owning prefs, ON for existing installs.
-    expect(out.prefs).toEqual({ ...v2.prefs, recap: true, weather: true });
+    expect(out.prefs).toEqual({
+      ...v2.prefs,
+      recap: true,
+      weather: true,
+      locationDenied: false,
+      recapNudgeDismissed: false,
+      weatherNudgeDismissed: false,
+    });
     expect(out.planner).toEqual([]);
     expect(out.streakFreezes).toEqual({
       available: 0,
@@ -130,6 +137,9 @@ describe('migrateStore', () => {
       vacationMode: false,
       recap: true,
       weather: true,
+      locationDenied: false,
+      recapNudgeDismissed: false,
+      weatherNudgeDismissed: false,
     });
     expect(out.streak).toEqual({ current: 9, best: 12 });
   });

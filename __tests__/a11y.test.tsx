@@ -14,10 +14,20 @@ import TasksSection from '../src/components/home/TasksSection';
 import SettingsScreen from '../src/screens/SettingsScreen';
 import { Habit } from '../src/data/seed';
 
-jest.mock('@react-navigation/native', () => ({
-  ...jest.requireActual('@react-navigation/native'),
-  useNavigation: () => ({ navigate: jest.fn(), goBack: jest.fn() }),
-}));
+jest.mock('@react-navigation/native', () => {
+  const ReactActual = jest.requireActual('react');
+  return {
+    ...jest.requireActual('@react-navigation/native'),
+    useNavigation: () => ({ navigate: jest.fn(), goBack: jest.fn() }),
+    // SettingsScreen re-checks permissions on focus; run the effect once.
+    useFocusEffect: (effect: () => void | (() => void)) => {
+      ReactActual.useEffect(() => {
+        const cleanup = effect();
+        return typeof cleanup === 'function' ? cleanup : undefined;
+      }, []);
+    },
+  };
+});
 
 const METRICS = {
   frame: { x: 0, y: 0, width: 390, height: 844 },

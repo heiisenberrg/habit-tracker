@@ -135,9 +135,21 @@ type State = {
     recap: boolean;
     /** Weather chip + rain alerts — its enable action owns the location ask. */
     weather: boolean;
+    /** Last location request was refused — Settings shows the recovery path. */
+    locationDenied: boolean;
+    /** One-time in-context nudge cards on Home, dismissed for good. */
+    recapNudgeDismissed: boolean;
+    weatherNudgeDismissed: boolean;
   };
   setPref: (
-    key: 'sounds' | 'vacationMode' | 'recap' | 'weather',
+    key:
+      | 'sounds'
+      | 'vacationMode'
+      | 'recap'
+      | 'weather'
+      | 'locationDenied'
+      | 'recapNudgeDismissed'
+      | 'weatherNudgeDismissed',
     value: boolean,
   ) => void;
   appLock: AppLockPrefs;
@@ -170,7 +182,15 @@ const initial = () => ({
   challengeJoinedOn: {} as Record<string, string>,
   // Permission-owning toggles start OFF on a fresh install: nothing may
   // raise an OS prompt until the user flips them (eng review 2026-08-31).
-  prefs: { sounds: true, vacationMode: false, recap: false, weather: false },
+  prefs: {
+    sounds: true,
+    vacationMode: false,
+    recap: false,
+    weather: false,
+    locationDenied: false,
+    recapNudgeDismissed: false,
+    weatherNudgeDismissed: false,
+  },
   appLock: {
     enabled: false,
     condition: 'habit',
@@ -312,7 +332,14 @@ export const migrateStore = (persisted: unknown, version: number) => {
     s = {
       ...s,
       planner,
-      prefs: { recap: true, weather: true, ...prefs },
+      prefs: {
+        recap: true,
+        weather: true,
+        locationDenied: false,
+        recapNudgeDismissed: false,
+        weatherNudgeDismissed: false,
+        ...prefs,
+      },
     };
   }
   return s;
