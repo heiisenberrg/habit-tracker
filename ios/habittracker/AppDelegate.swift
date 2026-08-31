@@ -89,6 +89,15 @@ class WidgetBridge: NSObject {
 
   @objc static func requiresMainQueueSetup() -> Bool { false }
 
+  /// The quote widget's timeline may fetch today's quote before the app is
+  /// opened; it stores it under `dailyQuote` so the app never fetches twice.
+  @objc func getDailyQuote(
+    _ resolve: RCTPromiseResolveBlock,
+    rejecter reject: RCTPromiseRejectBlock
+  ) {
+    resolve(UserDefaults(suiteName: WidgetBridge.appGroup)?.string(forKey: "dailyQuote"))
+  }
+
   @objc func setSharedState(_ json: NSString, forceReload force: Bool) {
     UserDefaults(suiteName: WidgetBridge.appGroup)?
       .set(json as String, forKey: "sharedState")

@@ -6,6 +6,15 @@
  */
 export type BundledQuote = { text: string; author: string };
 
+/** The resolved quote for one calendar day (app, widget and store share it). */
+export type DailyQuote = {
+  text: string;
+  author: string;
+  /** YYYY-MM-DD the quote is for */
+  date: string;
+  source: 'zenquotes' | 'bundled';
+};
+
 export const FALLBACK_QUOTES: BundledQuote[] = [
   { text: 'Well begun is half done.', author: 'Aristotle' },
   {

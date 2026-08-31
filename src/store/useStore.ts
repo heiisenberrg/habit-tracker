@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
+import type { DailyQuote } from '../data/quotes';
 import { Challenge, Habit, PlannerItem, seedChallenges } from '../data/seed';
 
 export const toDateKey = (d: Date) => {
@@ -91,6 +92,10 @@ type State = {
   importState: (data: Record<string, unknown>) => void;
   /** latch so the perfect-day congrats shows once per day */
   congratsShownOn: string | null;
+  /** Date key of the last full-screen quote-of-the-day (once per day). */
+  quoteShownOn: string | null;
+  /** Today's resolved quote — shared with the lock-screen widget. */
+  dailyQuote: DailyQuote | null;
   /** device integrations (personal app) */
   healthConnected: boolean;
   calendarConnected: boolean;
@@ -157,6 +162,8 @@ type State = {
   zen: ZenPrefs;
   setZen: (patch: Partial<ZenPrefs>) => void;
   markCongratsShown: (dateKey: string) => void;
+  markQuoteShown: (dateKey: string) => void;
+  setDailyQuote: (quote: DailyQuote | null) => void;
   setIntegration: (
     key: 'healthConnected' | 'calendarConnected',
     value: boolean,
@@ -216,6 +223,8 @@ const initial = () => ({
   lastRolledDay: toDateKey(addDays(new Date(), -1)),
   historyReconciled: true,
   congratsShownOn: null,
+  quoteShownOn: null as string | null,
+  dailyQuote: null as DailyQuote | null,
   healthConnected: false,
   calendarConnected: false,
   darkMode: false,
@@ -245,6 +254,7 @@ export const DATA_KEYS = [
   'planner',
   'histories',
   'congratsShownOn',
+  'quoteShownOn',
   'healthConnected',
   'calendarConnected',
   'darkMode',
@@ -455,6 +465,8 @@ export const useStore = create<State>()(
       setZen: patch => set({ zen: { ...get().zen, ...patch } }),
 
       markCongratsShown: dateKey => set({ congratsShownOn: dateKey }),
+      markQuoteShown: dateKey => set({ quoteShownOn: dateKey }),
+      setDailyQuote: quote => set({ dailyQuote: quote }),
 
       setIntegration: (key, value) => set({ [key]: value } as Partial<State>),
 

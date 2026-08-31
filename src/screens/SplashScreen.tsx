@@ -2,7 +2,8 @@ import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
 import { Image, StyleSheet, useWindowDimensions, View } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import { useStore } from '../store/useStore';
+import { todayKey, useStore } from '../store/useStore';
+import { routeAfterSplash } from './QuoteOfDayScreen';
 import { gradients } from '../theme/theme';
 
 const splashArt = require('../assets/splash-art.png');
@@ -10,6 +11,7 @@ const splashArt = require('../assets/splash-art.png');
 function SplashScreen() {
   const navigation = useNavigation<any>();
   const onboarded = useStore(s => s.onboarded);
+  const quoteShownOn = useStore(s => s.quoteShownOn);
   const { width, height } = useWindowDimensions();
   // Don't route until the persisted store has rehydrated — a slow cold
   // start would otherwise read the default onboarded=false and dump a
@@ -30,11 +32,13 @@ function SplashScreen() {
     const t = setTimeout(() => {
       navigation.reset({
         index: 0,
-        routes: [{ name: onboarded ? 'Main' : 'Onboarding' }],
+        routes: [
+          { name: routeAfterSplash(onboarded, quoteShownOn, todayKey()) },
+        ],
       });
     }, 1500);
     return () => clearTimeout(t);
-  }, [navigation, onboarded, hydrated]);
+  }, [navigation, onboarded, quoteShownOn, hydrated]);
 
   return (
     <LinearGradient

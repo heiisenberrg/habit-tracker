@@ -84,3 +84,22 @@ describe('fresh-install honesty (10A, extended 2026-08-31)', () => {
     expect(useStore.getState().planner).toEqual([]);
   });
 });
+
+describe('quote of the day flags', () => {
+  test('markQuoteShown records the day; setDailyQuote caches the quote; reset clears both', () => {
+    useStore.getState().reset();
+    expect(useStore.getState().quoteShownOn).toBeNull();
+    useStore.getState().markQuoteShown('2026-08-31');
+    useStore.getState().setDailyQuote({
+      text: 'Well begun is half done.',
+      author: 'Aristotle',
+      date: '2026-08-31',
+      source: 'bundled',
+    });
+    expect(useStore.getState().quoteShownOn).toBe('2026-08-31');
+    expect(useStore.getState().dailyQuote?.author).toBe('Aristotle');
+    useStore.getState().reset();
+    expect(useStore.getState().quoteShownOn).toBeNull();
+    expect(useStore.getState().dailyQuote).toBeNull();
+  });
+});

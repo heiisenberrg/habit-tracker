@@ -5,6 +5,7 @@
  * a failed day falls back to the bundled list and retries at most hourly.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { NativeModules } from 'react-native';
 import { FALLBACK_QUOTES } from '../src/data/quotes';
 import {
   fallbackQuote,
@@ -23,6 +24,7 @@ const zen = (q: string, a = 'Mae West') => [
 
 beforeEach(async () => {
   await AsyncStorage.clear();
+  NativeModules.WidgetBridge = undefined;
   (globalThis as unknown as { fetch: jest.Mock }).fetch = jest.fn();
 });
 
@@ -107,4 +109,33 @@ test('fallback is deterministic per day and cycles the bundled list', () => {
   expect(FALLBACK_QUOTES.every(q => q.text.length <= 140 && q.author)).toBe(
     true,
   );
+});
+
+test('a quote the widget already fetched today is reused — no request from the app', async () => {
+  const fetchMock = globalThis.fetch as jest.Mock;
+  NativeModules.WidgetBridge = {
+    getDailyQuote: jest.fn(async () =>
+      JSON.stringify({
+        text: 'Great acts are made up of small deeds.',
+        author: 'Lao Tzu',
+        date: '2026-08-31',
+        source: 'zenquotes',
+      }),
+    ),
+  };
+  const q = await getDailyQuote(new Date('2026-08-31T08:00:00'));
+  expect(q.author).toBe('Lao Tzu');
+  expect(q.source).toBe('zenquotes');
+  expect(fetchMock).not.toHaveBeenCalled();
+  // yesterday's widget quote is ignored
+  NativeModules.WidgetBridge = {
+    getDailyQuote: jest.fn(async () =>
+      JSON.stringify({ text: 'old', author: 'x', date: '2026-08-30' }),
+    ),
+  };
+  await AsyncStorage.clear();
+  fetchMock.mockReturnValue(ok(zen('Fresh.')));
+  const q2 = await getDailyQuote(new Date('2026-08-31T08:00:00'));
+  expect(q2.text).toBe('Fresh.');
+  expect(fetchMock).toHaveBeenCalledTimes(1);
 });

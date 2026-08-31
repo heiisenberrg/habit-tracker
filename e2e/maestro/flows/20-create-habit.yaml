@@ -2,6 +2,7 @@ appId: com.lucidbots.lucidbots
 ---
 
 - launchApp
+- assertNotVisible: ".*Quote of the day.*"
 - extendedWaitUntil:
     visible: "Hi, Aj.*"
     timeout: 45000

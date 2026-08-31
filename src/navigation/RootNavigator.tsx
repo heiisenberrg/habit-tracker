@@ -19,6 +19,7 @@ import ProfileScreen from '../screens/ProfileScreen';
 import QuickActionsScreen from '../screens/QuickActionsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import SplashScreen from '../screens/SplashScreen';
+import QuoteOfDayScreen from '../screens/QuoteOfDayScreen';
 import SuccessScreen from '../screens/SuccessScreen';
 
 export type RootStackParamList = {
@@ -27,6 +28,7 @@ export type RootStackParamList = {
   EmailAuth: undefined;
   CreateAccount: undefined;
   Main: undefined;
+  QuoteOfDay: undefined;
   QuickActions: undefined;
   NewGoodHabit: undefined;
   Assistant: { flow?: 'habit' | 'task' | 'reminder' | 'quick' } | undefined;
@@ -74,6 +76,11 @@ function RootNavigator() {
         <Stack.Screen name="Onboarding" component={OnboardingScreen} />
         <Stack.Screen name="EmailAuth" component={EmailAuthScreen} />
         <Stack.Screen name="CreateAccount" component={CreateAccountScreen} />
+        <Stack.Screen
+          name="QuoteOfDay"
+          component={QuoteOfDayScreen}
+          options={{ animation: 'fade' }}
+        />
         <Stack.Screen name="Main" component={MainTabs} />
         <Stack.Group
           screenOptions={{

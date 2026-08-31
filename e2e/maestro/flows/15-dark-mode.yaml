@@ -2,6 +2,7 @@ appId: com.lucidbots.lucidbots
 ---
 
 - launchApp
+- assertNotVisible: ".*Quote of the day.*"
 - tapOn: "Profile"
 - tapOn: "Settings"
 - extendedWaitUntil:

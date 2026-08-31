@@ -123,6 +123,7 @@ function App() {
 
   // Keep the shared widget/shield payload in sync with the store.
   const appLock = useStore(s => s.appLock);
+  const dailyQuote = useStore(s => s.dailyQuote);
   useEffect(() => {
     pushStreakToWidget({
       habits,
@@ -132,8 +133,18 @@ function App() {
       histories,
       streak,
       appLock,
+      dailyQuote,
     });
-  }, [habits, completions, statuses, planner, histories, streak, appLock]);
+  }, [
+    habits,
+    completions,
+    statuses,
+    planner,
+    histories,
+    streak,
+    appLock,
+    dailyQuote,
+  ]);
 
   // App Lock: shield/unshield the picked apps as completions change —
   // finishing the unlock habit releases them immediately. A running zen

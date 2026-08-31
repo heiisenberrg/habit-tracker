@@ -195,9 +195,209 @@ struct RoutinerWidgetEntryView: View {
   }
 }
 
-// MARK: - Widget
+// MARK: - Quote of the day (lock screen + home screen)
+
+/// One quote per calendar day, one network request per day for the whole
+/// device: the App Group is checked first (`dailyQuote` written by this
+/// widget, or `sharedState.quote` written by the app), ZenQuotes only when
+/// neither has today's quote, and the app-supplied bundled list offline.
+struct QuoteEntry: TimelineEntry {
+  let date: Date
+  let text: String
+  let author: String
+  let isFallback: Bool
+}
+
+private struct StoredQuote: Codable {
+  let text: String
+  let author: String
+  let date: String
+  let source: String
+}
+
+private struct FallbackQuote: Decodable {
+  let text: String
+  let author: String
+}
+
+private struct SharedQuoteState: Decodable {
+  let quote: StoredQuote?
+  let fallbackQuotes: [FallbackQuote]?
+}
+
+private struct ZenQuote: Decodable {
+  let q: String
+  let a: String
+}
+
+private let zenQuotesTodayURL = URL(string: "https://zenquotes.io/api/today")!
+private let builtInFallback: [FallbackQuote] = [
+  FallbackQuote(text: "Well begun is half done.", author: "Aristotle"),
+  FallbackQuote(text: "The journey of a thousand miles begins with a single step.", author: "Lao Tzu"),
+  FallbackQuote(text: "Little strokes fell great oaks.", author: "Benjamin Franklin"),
+]
+
+private func localDateKey(_ date: Date = Date()) -> String {
+  let f = DateFormatter()
+  f.calendar = Calendar.current
+  f.timeZone = TimeZone.current
+  f.dateFormat = "yyyy-MM-dd"
+  return f.string(from: date)
+}
+
+private func nextMidnight(after date: Date = Date()) -> Date {
+  let start = Calendar.current.startOfDay(for: date)
+  return Calendar.current.date(byAdding: .day, value: 1, to: start)!
+}
+
+private func readStoredQuote() -> StoredQuote? {
+  guard
+    let raw = UserDefaults(suiteName: appGroup)?.string(forKey: "dailyQuote"),
+    let data = raw.data(using: .utf8)
+  else { return nil }
+  return try? JSONDecoder().decode(StoredQuote.self, from: data)
+}
+
+private func readSharedQuoteState() -> SharedQuoteState? {
+  guard
+    let raw = UserDefaults(suiteName: appGroup)?.string(forKey: "sharedState"),
+    let data = raw.data(using: .utf8)
+  else { return nil }
+  return try? JSONDecoder().decode(SharedQuoteState.self, from: data)
+}
+
+private func storeQuote(_ q: StoredQuote) {
+  if let data = try? JSONEncoder().encode(q), let json = String(data: data, encoding: .utf8) {
+    UserDefaults(suiteName: appGroup)?.set(json, forKey: "dailyQuote")
+  }
+}
+
+private func fallbackEntry(for date: Date) -> QuoteEntry {
+  let list = readSharedQuoteState()?.fallbackQuotes.flatMap { $0.isEmpty ? nil : $0 } ?? builtInFallback
+  let day = Calendar.current.ordinality(of: .day, in: .year, for: date) ?? 1
+  let q = list[(day - 1) % list.count]
+  return QuoteEntry(date: date, text: q.text, author: q.author, isFallback: true)
+}
+
+struct QuoteProvider: TimelineProvider {
+  func placeholder(in context: Context) -> QuoteEntry {
+    QuoteEntry(date: Date(), text: "Well begun is half done.", author: "Aristotle", isFallback: false)
+  }
+
+  func getSnapshot(in context: Context, completion: @escaping (QuoteEntry) -> Void) {
+    if context.isPreview {
+      completion(placeholder(in: context))
+      return
+    }
+    completion(cachedEntry(for: Date()) ?? fallbackEntry(for: Date()))
+  }
+
+  /// Today's quote from either App Group key, without touching the network.
+  private func cachedEntry(for date: Date) -> QuoteEntry? {
+    let today = localDateKey(date)
+    if let mine = readStoredQuote(), mine.date == today {
+      return QuoteEntry(date: date, text: mine.text, author: mine.author, isFallback: mine.source == "bundled")
+    }
+    if let shared = readSharedQuoteState()?.quote, shared.date == today {
+      storeQuote(shared)
+      return QuoteEntry(date: date, text: shared.text, author: shared.author, isFallback: shared.source == "bundled")
+    }
+    return nil
+  }
+
+  func getTimeline(in context: Context, completion: @escaping (Timeline<QuoteEntry>) -> Void) {
+    let now = Date()
+    if let cached = cachedEntry(for: now), !cached.isFallback {
+      completion(Timeline(entries: [cached], policy: .after(nextMidnight(after: now))))
+      return
+    }
+    var request = URLRequest(url: zenQuotesTodayURL)
+    request.timeoutInterval = 6
+    URLSession.shared.dataTask(with: request) { data, _, _ in
+      let today = localDateKey(now)
+      if
+        let data = data,
+        let decoded = try? JSONDecoder().decode([ZenQuote].self, from: data),
+        let first = decoded.first,
+        !first.q.trimmingCharacters(in: .whitespaces).isEmpty
+      {
+        let quote = StoredQuote(text: first.q, author: first.a, date: today, source: "zenquotes")
+        storeQuote(quote)
+        let entry = QuoteEntry(date: now, text: quote.text, author: quote.author, isFallback: false)
+        completion(Timeline(entries: [entry], policy: .after(nextMidnight(after: now))))
+      } else {
+        // Offline: show the bundled line and try again in an hour.
+        let retry = Calendar.current.date(byAdding: .hour, value: 1, to: now)!
+        completion(Timeline(entries: [fallbackEntry(for: now)], policy: .after(min(retry, nextMidnight(after: now)))))
+      }
+    }.resume()
+  }
+}
+
+struct QuoteWidgetEntryView: View {
+  @Environment(\.widgetFamily) var family
+  let entry: QuoteEntry
+
+  var body: some View {
+    switch family {
+    case .accessoryInline:
+      Text("\u{201C}\(entry.text)\u{201D} — \(entry.author)")
+    case .accessoryRectangular:
+      VStack(alignment: .leading, spacing: 2) {
+        Text(entry.text)
+          .font(.system(size: 12, weight: .semibold))
+          .lineLimit(3)
+          .minimumScaleFactor(0.85)
+        Text("— \(entry.author)")
+          .font(.system(size: 10, weight: .regular))
+          .opacity(0.8)
+          .lineLimit(1)
+      }
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .containerBackground(for: .widget) { Color.clear }
+    default:
+      VStack(alignment: .leading, spacing: 8) {
+        Text("Quote of the day")
+          .font(.system(size: 11, weight: .bold))
+          .textCase(.uppercase)
+          .foregroundColor(.white.opacity(0.7))
+        Text("\u{201C}\(entry.text)\u{201D}")
+          .font(.system(size: 17, weight: .semibold, design: .rounded))
+          .foregroundColor(.white)
+          .lineLimit(4)
+          .minimumScaleFactor(0.7)
+        Spacer(minLength: 0)
+        Text("— \(entry.author)")
+          .font(.system(size: 13, weight: .medium))
+          .foregroundColor(.white.opacity(0.85))
+      }
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .containerBackground(for: .widget) { gradient }
+    }
+  }
+}
+
+struct RoutinerQuoteWidget: Widget {
+  var body: some WidgetConfiguration {
+    StaticConfiguration(kind: "RoutinerQuoteWidget", provider: QuoteProvider()) { entry in
+      QuoteWidgetEntryView(entry: entry)
+    }
+    .configurationDisplayName("Quote of the Day")
+    .description("One motivational line a day, on your lock screen.")
+    .supportedFamilies([.accessoryRectangular, .accessoryInline, .systemMedium])
+  }
+}
+
+// MARK: - Widgets
 
 @main
+struct RoutinerWidgets: WidgetBundle {
+  var body: some Widget {
+    RoutinerWidget()
+    RoutinerQuoteWidget()
+  }
+}
+
 struct RoutinerWidget: Widget {
   var body: some WidgetConfiguration {
     StaticConfiguration(kind: "RoutinerStreakWidget", provider: StreakProvider()) { entry in

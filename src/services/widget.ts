@@ -6,6 +6,7 @@
  * unless the lock state flipped, to respect WidgetKit's reload budget.
  */
 import { NativeModules } from 'react-native';
+import { DailyQuote, FALLBACK_QUOTES } from '../data/quotes';
 import { Habit } from '../data/seed';
 import { appLockConditionLabel, appLockSatisfied } from './appLock';
 import {
@@ -22,6 +23,8 @@ import {
 type WidgetSlice = Parameters<typeof dayStreak>[0] & {
   habits: Habit[];
   appLock: AppLockPrefs;
+  /** Today's quote, so the lock-screen widget never fetches it a second time. */
+  dailyQuote?: DailyQuote | null;
 };
 
 const LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -90,6 +93,17 @@ export const pushStreakToWidget = (s: WidgetSlice): void => {
       label: appLockConditionLabel(s.appLock, s.habits),
     },
     unlockHabit,
+    // Quote of the day for the lock-screen widget + the offline list it
+    // falls back to (keeps the whole device at one request per day).
+    quote: s.dailyQuote
+      ? {
+          text: s.dailyQuote.text,
+          author: s.dailyQuote.author,
+          date: s.dailyQuote.date,
+          source: s.dailyQuote.source,
+        }
+      : null,
+    fallbackQuotes: FALLBACK_QUOTES,
     updatedAt: new Date().toISOString(),
   };
 

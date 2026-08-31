@@ -172,11 +172,13 @@ function HomeScreen() {
     getDailyQuote().then(q => {
       if (alive) {
         setQuote(q);
+        store.setDailyQuote(q);
       }
     });
     return () => {
       alive = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dayKey]);
 
   // The Settings "Weather & rain alerts" toggle owns the location ask

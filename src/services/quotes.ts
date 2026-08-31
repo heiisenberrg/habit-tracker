@@ -6,16 +6,11 @@
  * public-domain line meanwhile. Nothing about the user is sent.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { FALLBACK_QUOTES } from '../data/quotes';
+import { NativeModules } from 'react-native';
+import { DailyQuote, FALLBACK_QUOTES } from '../data/quotes';
 import { toDateKey } from '../store/useStore';
 
-export type DailyQuote = {
-  text: string;
-  author: string;
-  /** YYYY-MM-DD the quote is for */
-  date: string;
-  source: 'zenquotes' | 'bundled';
-};
+export type { DailyQuote } from '../data/quotes';
 
 export const QUOTE_CACHE_KEY = 'quote:daily';
 export const QUOTE_ATTEMPT_KEY = 'quote:lastAttempt';
@@ -90,11 +85,41 @@ const fetchWithTimeout = async (url: string): Promise<unknown> => {
   }
 };
 
+/**
+ * The lock-screen widget may have fetched today's quote first (its timeline
+ * runs at midnight); it leaves it in the App Group under `dailyQuote`. Reading
+ * it here keeps the whole device at one request per day.
+ */
+const widgetQuoteForDate = async (date: string): Promise<DailyQuote | null> => {
+  try {
+    const raw: string | null | undefined =
+      await NativeModules.WidgetBridge?.getDailyQuote?.();
+    const q = raw ? (JSON.parse(raw) as Partial<DailyQuote>) : null;
+    if (
+      q &&
+      q.date === date &&
+      typeof q.text === 'string' &&
+      q.text.trim() &&
+      typeof q.author === 'string'
+    ) {
+      return { text: q.text, author: q.author, date, source: 'zenquotes' };
+    }
+  } catch {
+    // no bridge (Android/tests) or unreadable value — fall through
+  }
+  return null;
+};
+
 export const getDailyQuote = async (now = new Date()): Promise<DailyQuote> => {
   const date = toDateKey(now);
   const cached = await readJson<DailyQuote>(QUOTE_CACHE_KEY);
   if (cached?.date === date && cached.source === 'zenquotes') {
     return cached; // today's real quote — no request
+  }
+  const fromWidget = await widgetQuoteForDate(date);
+  if (fromWidget) {
+    await writeJson(QUOTE_CACHE_KEY, fromWidget);
+    return fromWidget; // the widget already spent today's request
   }
   const lastAttempt = await readJson<number>(QUOTE_ATTEMPT_KEY);
   if (lastAttempt && now.getTime() - lastAttempt < RETRY_BACKOFF_MS) {

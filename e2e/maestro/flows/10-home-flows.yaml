@@ -3,8 +3,14 @@ appId: com.lucidbots.lucidbots
 
 - launchApp
 - extendedWaitUntil:
-    visible: "Hi, Aj.*"
+    visible: ".*Quote of the day.*"
     timeout: 45000
+- assertVisible: "Continue"
+- takeScreenshot: s18-quote-of-day
+- tapOn: "Continue"
+- extendedWaitUntil:
+    visible: "Hi, Aj.*"
+    timeout: 15000
 - tapOn: "Log Drink water"
 - assertNotVisible: ".*use your location.*"
 - tapOn: "Log Drink water"
