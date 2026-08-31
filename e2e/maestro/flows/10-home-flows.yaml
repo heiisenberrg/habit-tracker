@@ -17,11 +17,11 @@ appId: com.lucidbots.lucidbots
 - tapOn: "Start zen"
 - takeScreenshot: s22-zen-sheet
 - tapOn: "15 minutes"
-- assertVisible: "Zen until.*"
+- assertVisible: ".*Zen until.*"
 - takeScreenshot: s23-zen-on
 - tapOn: "Zen session running"
 - tapOn: "End zen early"
-- assertNotVisible: "Zen until.*"
+- assertNotVisible: ".*Zen until.*"
 - tapOn: "Ask Assistant"
 - extendedWaitUntil:
     visible: ".*Quick log.*"
@@ -33,7 +33,7 @@ appId: com.lucidbots.lucidbots
     timeout: 5000
 - tapOn: ".*done meditate.*"
 - inputText: "500 ml"
-- tapOn: "↑"
+- pressKey: Enter
 - extendedWaitUntil:
     visible: ".*(Logged!|complete).*"
     timeout: 6000
@@ -43,12 +43,12 @@ appId: com.lucidbots.lucidbots
 - takeScreenshot: s26-assistant-habit-flow
 - tapOn: ".*Meditate every morning.*"
 - inputText: "Journal"
-- tapOn: "↑"
+- pressKey: Enter
 - takeScreenshot: s27-assistant-habit-step2
 - tapOn: "Back"
 - tapOn: "Activity"
 - extendedWaitUntil:
-    visible: "All Habits"
+    visible: ".*All Habits.*"
     timeout: 8000
 - takeScreenshot: s28-activity
 - tapOn: "Profile"

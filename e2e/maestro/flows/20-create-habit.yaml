@@ -19,21 +19,28 @@ appId: com.lucidbots.lucidbots
 - tapOn: ".*Create Custom Habit.*"
 - tapOn: ".*Try: Meditate x2.*"
 - inputText: "Stretch x3"
-- tapOn: "Create Custom Habit"
+- pressKey: Enter
 - scrollUntilVisible:
-    element: "Remind me daily"
+    element: "Daily reminder"
     direction: DOWN
 - tapOn: "Daily reminder"
+- takeScreenshot: c02b-reminder-toggled
 - tapOn: ".*09:00.*"
+- eraseText: 8
 - inputText: "21:30"
-- tapOn: "Create Custom Habit"
+- pressKey: Enter
 - takeScreenshot: c03-custom-habit-filled
 - tapOn: ".*Add Habit"
 - tapOn:
     text: "Allow"
     optional: true
 - extendedWaitUntil:
-    visible: ".*Stretch.*"
+    visible: ".*Stretch added to your habits.*"
+    timeout: 10000
+- takeScreenshot: c03b-congrats
+- tapOn: ".*Continue"
+- extendedWaitUntil:
+    visible: "Log Stretch"
     timeout: 10000
 - takeScreenshot: c04-home-with-stretch
 - tapOn: "Log Stretch"

@@ -76,7 +76,12 @@ function FlowInput({
           returnKeyType="send"
           style={styles.textInput}
         />
-        <Pressable onPress={onSubmitDraft} style={styles.sendButton}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Send"
+          onPress={onSubmitDraft}
+          style={styles.sendButton}
+        >
           <AppText variant="bodyMedium" color={colors.white}>
             ↑
           </AppText>

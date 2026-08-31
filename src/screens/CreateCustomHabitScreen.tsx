@@ -101,6 +101,8 @@ function CreateCustomHabitScreen() {
         <AppText variant="h6">Create Custom Habit</AppText>
       </View>
       <ScrollView
+        keyboardDismissMode="on-drag"
+        keyboardShouldPersistTaps="handled"
         contentContainerStyle={[
           styles.content,
           { paddingBottom: insets.bottom + spacing.xl },
@@ -115,6 +117,8 @@ function CreateCustomHabitScreen() {
             value={name}
             onChangeText={setName}
             placeholder="Try: Meditate x2"
+            returnKeyType="done"
+            blurOnSubmit
             placeholderTextColor={colors.ink20}
             onFocus={() => setFocused(true)}
             onBlur={() => setFocused(false)}
@@ -210,6 +214,8 @@ function CreateCustomHabitScreen() {
                   value={reminderTime}
                   onChangeText={setReminderTime}
                   placeholder="09:00"
+                  returnKeyType="done"
+                  blurOnSubmit
                   placeholderTextColor={colors.ink20}
                   keyboardType="numbers-and-punctuation"
                   style={styles.reminderTimeInput}
