@@ -241,11 +241,11 @@ chat line logs a habit, and the streak survives a sick day. Everything else
 |--------|---------|-----|------|--------|----------|
 | CEO Review | `/plan-ceo-review` | Scope & strategy | 1 | CLEAN | 5 proposals, 4 accepted, 1 deferred |
 | Codex Review | `/codex review` | Independent 2nd opinion | 0 | — | — |
-| Eng Review | `/plan-eng-review` | Architecture & tests (required) | 1 | CLEAN | 20 issues, 0 critical gaps |
+| Eng Review | `/plan-eng-review` | Architecture & tests (required) | 2 | CLEAN | 2026-08-31 (post-QA diff): 32 issues, 0 critical gaps · 2026-08-30 (plan): 20 issues, 0 critical gaps |
 | Design Review | `/plan-design-review` | UI/UX gaps | 0 | — | — |
 | DX Review | `/plan-devex-review` | Developer experience gaps | 0 | — | — |
 
-- **CROSS-MODEL:** two Claude outside voices (fresh-context) ran — CEO-stage (13 findings) and eng-stage (16 source-verified findings incl. one reversal of an in-review recommendation on library evidence). All folded with explicit user approval; zero auto-incorporated.
-- **VERDICT:** CEO + ENG CLEARED — ready to implement.
+- **CROSS-MODEL:** three Claude outside voices (fresh-context) have run — CEO-stage (13), eng-stage on the plan (16), and eng-stage on the 2026-08-31 simulator-QA fix diff (10 findings: 2 agreed with the review, 6 tensions decided by the user — 5 accepted, 1 kept as reviewed — plus 4 hygiene corrections accepted). Zero auto-incorporated.
+- **VERDICT:** CEO + ENG CLEARED — implement tasks T1–T14 (`~/.gstack/projects/habittracker/tasks-eng-review-20260831-094912.jsonl`), then re-run the five Maestro flows green before committing.
 
 NO UNRESOLVED DECISIONS

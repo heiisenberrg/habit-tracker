@@ -1,0 +1,63 @@
+appId: com.lucidbots.lucidbots
+---
+
+- launchApp:
+    clearState: true
+    permissions:
+      all: unset
+- extendedWaitUntil:
+    visible: ".*Continue with E-mail"
+    timeout: 45000
+- takeScreenshot: s01-onboarding-p1
+- swipe:
+    start: "80%,40%"
+    end: "20%,40%"
+- takeScreenshot: s02-onboarding-p2
+- swipe:
+    start: "80%,40%"
+    end: "20%,40%"
+- takeScreenshot: s03-onboarding-p3
+- tapOn: ".*Continue with E-mail"
+- takeScreenshot: s04-email-empty
+- tapOn: ".*you@example.com.*"
+- inputText: "not-an-email"
+- takeScreenshot: s05-email-invalid
+- eraseText: 20
+- inputText: "aj@example.com"
+- tapOn: ".*Continue"
+- extendedWaitUntil:
+    visible: "Create Account"
+    timeout: 8000
+- takeScreenshot: s06-create-1
+- tapOn: ".*Next"
+- takeScreenshot: s07-create-1-empty-next
+- tapOn: ".*Enter your name.*"
+- inputText: "Aj"
+- tapOn: ".*Enter your surname.*"
+- inputText: "Tester"
+- tapOn: ".*mm/dd/yyyy.*"
+- inputText: "13/45/1990"
+- takeScreenshot: s08-create-1-bad-date
+- tapOn: ".*mm/dd/yyyy.*"
+- eraseText: 12
+- inputText: "04/12/1994"
+- tapOn: ".*Next"
+- assertVisible: "Choose your gender"
+- takeScreenshot: s09-create-2
+- tapOn: ".*Male.*"
+- tapOn: ".*Next"
+- assertVisible: "Choose your first habits"
+- takeScreenshot: s10-create-3
+- tapOn: ".*Finish"
+- extendedWaitUntil:
+    visible: "Hi, Aj.*"
+    timeout: 10000
+- takeScreenshot: s11-home-fresh
+- extendedWaitUntil:
+    notVisible: ".*Would Like to Send You Notifications.*"
+    timeout: 4000
+- assertNotVisible: ".*Would Like to Send You Notifications.*"
+- assertNotVisible: ".*use your location.*"
+- takeScreenshot: s12-home-fresh-no-prompts
+- assertNotVisible: ".*Review PR feedback.*"
+- assertNotVisible: ".*Team standup.*"

@@ -84,7 +84,9 @@ describe('migrateStore', () => {
     const out = migrateStore(v2, 2) as Record<string, unknown>;
     expect(out.completions).toEqual(v2.completions);
     expect(out.darkMode).toBe(true);
-    expect(out.prefs).toEqual(v2.prefs);
+    // v4 adds the permission-owning prefs, ON for existing installs.
+    expect(out.prefs).toEqual({ ...v2.prefs, recap: true, weather: true });
+    expect(out.planner).toEqual([]);
     expect(out.streakFreezes).toEqual({
       available: 0,
       usedOn: [],
@@ -95,9 +97,51 @@ describe('migrateStore', () => {
     expect(typeof out.lastRolledDay).toBe('string');
   });
 
-  test('v3 passthrough is untouched', () => {
-    const v3 = { streak: { current: 9, best: 12 }, historyReconciled: true };
-    expect(migrateStore(v3, 3)).toEqual(v3);
+  test('v3 → v4 drops only the seeded demo planner items (id-only)', () => {
+    const v3 = {
+      streak: { current: 9, best: 12 },
+      historyReconciled: true,
+      prefs: { sounds: true, vacationMode: false },
+      planner: [
+        { id: 't1', date: '2026-08-20', title: 'Team standup', type: 'block' },
+        {
+          id: 't2',
+          date: '2026-08-20',
+          title: 'Review PR feedback',
+          type: 'task',
+        },
+        {
+          id: 't1756600000000-3',
+          date: '2026-08-30',
+          title: 'Real task',
+          type: 'task',
+        },
+        { id: 'cal-abc', date: '2026-08-30', title: 'Standup', type: 'block' },
+        { id: 't4', date: '2026-08-21', title: 'Update resume', type: 'task' },
+      ],
+    };
+    const out = migrateStore(v3, 3) as Record<string, unknown>;
+    expect((out.planner as { id: string }[]).map(t => t.id)).toEqual([
+      't1756600000000-3',
+      'cal-abc',
+    ]);
+    expect(out.prefs).toEqual({
+      sounds: true,
+      vacationMode: false,
+      recap: true,
+      weather: true,
+    });
+    expect(out.streak).toEqual({ current: 9, best: 12 });
+  });
+
+  test('v4 passthrough is untouched', () => {
+    const v4 = {
+      streak: { current: 9, best: 12 },
+      historyReconciled: true,
+      prefs: { sounds: true, vacationMode: false, recap: false, weather: true },
+      planner: [{ id: 't1', title: 'user item that happens to be t1' }],
+    };
+    expect(migrateStore(v4, 4)).toEqual(v4);
   });
 
   test('never returns initial() — user fields survive any version', () => {

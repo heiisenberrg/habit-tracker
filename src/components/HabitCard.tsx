@@ -26,7 +26,7 @@ function HabitCard({ habit, amount, onIncrement, onPress }: Props) {
     habit.color && HEX6.test(habit.color) ? habit.color : undefined;
 
   return (
-    <Card onPress={onPress} style={styles.card}>
+    <Card onPress={onPress} accessible={false} style={styles.card}>
       <ProgressRing
         size={36}
         strokeWidth={3}
@@ -43,7 +43,14 @@ function HabitCard({ habit, amount, onIncrement, onPress }: Props) {
           <AppText variant="body">{habit.emoji}</AppText>
         </View>
       </ProgressRing>
-      <View style={styles.text}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`${habit.name}, ${amount} of ${habit.goal.amount} ${
+          habit.goal.unit
+        }${done ? ', completed' : ''}, opens details`}
+        onPress={onPress}
+        style={styles.text}
+      >
         <View style={styles.nameRow}>
           <AppText variant="bodyMedium" style={styles.name}>
             {habit.name}
@@ -62,7 +69,7 @@ function HabitCard({ habit, amount, onIncrement, onPress }: Props) {
             ]}
           />
         </View>
-      </View>
+      </Pressable>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={

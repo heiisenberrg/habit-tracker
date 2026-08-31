@@ -8,6 +8,7 @@
  */
 import { appLockSatisfied, zenActiveAt } from './appLock';
 import {
+  RECAP_CHANNEL,
   cancelNotificationById,
   scheduleOneOffNotification,
 } from './notifications';
@@ -40,11 +41,17 @@ export const recapTimestamp = (now: Date = new Date()): number => {
 export const buildRecap = (
   s: Pick<
     RecapState,
-    'habits' | 'completions' | 'statuses' | 'planner' | 'prefs' | 'zen' | 'appLock'
+    | 'habits'
+    | 'completions'
+    | 'statuses'
+    | 'planner'
+    | 'prefs'
+    | 'zen'
+    | 'appLock'
   >,
   now: Date = new Date(),
 ): { title: string; body: string } | null => {
-  if (s.prefs.vacationMode) {
+  if (!s.prefs.recap || s.prefs.vacationMode) {
     return null;
   }
   if (
@@ -104,7 +111,15 @@ export const scheduleRecap = async (now: Date = new Date()): Promise<void> => {
     await cancelNotificationById(RECAP_ID);
     return;
   }
-  await scheduleOneOffNotification(RECAP_ID, content.title, content.body, ts);
+  // Passive by construction: the wrapper never prompts; the Settings
+  // "Evening recap" toggle owns the permission ask.
+  await scheduleOneOffNotification(
+    RECAP_ID,
+    content.title,
+    content.body,
+    ts,
+    RECAP_CHANNEL,
+  );
 };
 
 /** Background-fetch entry: hydration-gated, single-writer compliant. */

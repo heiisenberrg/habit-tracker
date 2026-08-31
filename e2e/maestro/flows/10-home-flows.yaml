@@ -1,0 +1,60 @@
+appId: com.lucidbots.lucidbots
+---
+
+- launchApp
+- extendedWaitUntil:
+    visible: "Hi, Aj.*"
+    timeout: 45000
+- tapOn: "Log Drink water"
+- assertNotVisible: ".*use your location.*"
+- tapOn: "Log Drink water"
+- tapOn: "Log Walk"
+- takeScreenshot: s19-home-after-first-logs
+- takeScreenshot: s20-home-after-logs
+- tapOn: ".*Drink water, .*opens details"
+- takeScreenshot: s21-habit-detail
+- tapOn: "Back"
+- tapOn: "Start zen"
+- takeScreenshot: s22-zen-sheet
+- tapOn: "15 minutes"
+- assertVisible: "Zen until.*"
+- takeScreenshot: s23-zen-on
+- tapOn: "Zen session running"
+- tapOn: "End zen early"
+- assertNotVisible: "Zen until.*"
+- tapOn: "Ask Assistant"
+- extendedWaitUntil:
+    visible: ".*Quick log.*"
+    timeout: 8000
+- takeScreenshot: s24-assistant-menu
+- tapOn: ".*Quick log.*"
+- extendedWaitUntil:
+    visible: ".*done meditate.*"
+    timeout: 5000
+- tapOn: ".*done meditate.*"
+- inputText: "500 ml"
+- tapOn: "↑"
+- extendedWaitUntil:
+    visible: ".*(Logged!|complete).*"
+    timeout: 6000
+- takeScreenshot: s25-quicklog-result
+- tapOn: "✨ Add another"
+- tapOn: ".*New habit.*"
+- takeScreenshot: s26-assistant-habit-flow
+- tapOn: ".*Meditate every morning.*"
+- inputText: "Journal"
+- tapOn: "↑"
+- takeScreenshot: s27-assistant-habit-step2
+- tapOn: "Back"
+- tapOn: "Activity"
+- extendedWaitUntil:
+    visible: "All Habits"
+    timeout: 8000
+- takeScreenshot: s28-activity
+- tapOn: "Profile"
+- takeScreenshot: s29-profile
+- tapOn: "Settings"
+- extendedWaitUntil:
+    visible: "Dark Mode"
+    timeout: 8000
+- takeScreenshot: s30-settings-light

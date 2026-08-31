@@ -150,7 +150,11 @@ function ExploreScreen() {
           <AppText variant="h5" style={styles.flex}>
             Explore
           </AppText>
-          <IconButton size={44} onPress={toggleSearch}>
+          <IconButton
+            size={44}
+            accessibilityLabel={searchOpen ? 'Close search' : 'Search'}
+            onPress={toggleSearch}
+          >
             <AppText variant="body">{searchOpen ? '✕' : '🔍'}</AppText>
           </IconButton>
         </View>

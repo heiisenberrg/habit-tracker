@@ -43,7 +43,7 @@ const base = (over: Record<string, unknown> = {}) =>
     completions: {},
     statuses: {},
     planner: [],
-    prefs: { sounds: true, vacationMode: false },
+    prefs: { sounds: true, vacationMode: false, recap: true, weather: false },
     zen: { until: null, useFocusShortcut: false },
     appLock: {
       enabled: false,
@@ -98,7 +98,17 @@ describe('buildRecap (D9 content builder)', () => {
     };
     expect(buildRecap(base({ completions: done }), NOON)).toBeNull();
     expect(
-      buildRecap(base({ prefs: { sounds: true, vacationMode: true } }), NOON),
+      buildRecap(
+        base({
+          prefs: {
+            sounds: true,
+            vacationMode: true,
+            recap: true,
+            weather: false,
+          },
+        }),
+        NOON,
+      ),
     ).toBeNull();
     const zenPast21 = new Date('2026-08-30T21:30:00').toISOString();
     expect(

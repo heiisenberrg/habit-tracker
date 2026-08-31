@@ -1,14 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import {
-  Challenge,
-  Habit,
-  PlannerItem,
-  seedChallenges,
-  seedHabits,
-  seedPlanner,
-} from '../data/seed';
+import { Challenge, Habit, PlannerItem, seedChallenges } from '../data/seed';
 
 export const toDateKey = (d: Date) => {
   const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -135,8 +128,18 @@ type State = {
   inbox: InboxItem[];
   addInboxItem: (item: { title: string; body: string; at?: string }) => void;
   markInboxRead: () => void;
-  prefs: { sounds: boolean; vacationMode: boolean };
-  setPref: (key: 'sounds' | 'vacationMode', value: boolean) => void;
+  prefs: {
+    sounds: boolean;
+    vacationMode: boolean;
+    /** Evening recap toggle — its enable action owns the notification ask. */
+    recap: boolean;
+    /** Weather chip + rain alerts — its enable action owns the location ask. */
+    weather: boolean;
+  };
+  setPref: (
+    key: 'sounds' | 'vacationMode' | 'recap' | 'weather',
+    value: boolean,
+  ) => void;
   appLock: AppLockPrefs;
   setAppLock: (patch: Partial<AppLockPrefs>) => void;
   zen: ZenPrefs;
@@ -159,16 +162,15 @@ type State = {
 
 /** 10A seed honesty: fresh installs start with EMPTY history — no
  *  synthetic data props up the streak and Reset can never satisfy App Lock. */
-const zeroHistories = (habits: Habit[]): Record<string, number[]> =>
-  Object.fromEntries(habits.map(h => [h.id, Array(83).fill(0)]));
-
 const initial = () => ({
   onboarded: false,
   user: { name: '', surname: '', email: '' },
   mood: '😇',
   inbox: [] as InboxItem[],
   challengeJoinedOn: {} as Record<string, string>,
-  prefs: { sounds: true, vacationMode: false },
+  // Permission-owning toggles start OFF on a fresh install: nothing may
+  // raise an OS prompt until the user flips them (eng review 2026-08-31).
+  prefs: { sounds: true, vacationMode: false, recap: false, weather: false },
   appLock: {
     enabled: false,
     condition: 'habit',
@@ -176,14 +178,19 @@ const initial = () => ({
     until: '18:00',
   } as AppLockPrefs,
   zen: { until: null, useFocusShortcut: false } as ZenPrefs,
-  habits: seedHabits,
+  // 10A seed honesty: a new user starts with the habits they picked in
+  // onboarding step 3 — never with pre-installed ones that define their
+  // perfect day.
+  habits: [] as Habit[],
   challenges: seedChallenges,
   joinedChallengeIds: [] as string[],
   completions: {} as CompletionMap,
   statuses: {} as StatusMap,
   moods: {} as Record<string, string>,
-  planner: seedPlanner(todayKey(), toDateKey(addDays(new Date(), 1))),
-  histories: zeroHistories(seedHabits),
+  // 10A seed honesty: no demo tasks — a fake open task would block the
+  // perfect-day rule (dayPerfect requires every task-type item done).
+  planner: [] as PlannerItem[],
+  histories: {} as Record<string, number[]>,
   streakFreezes: { available: 0, usedOn: [], runLength: 0 } as StreakFreezes,
   streak: { current: 0, best: 0 } as StreakCounter,
   lastRolledDay: toDateKey(addDays(new Date(), -1)),
@@ -278,15 +285,34 @@ const routinerStorage = createJSONStorage(() => storageBackend);
  * wipe data. v3 adds the rollover/freeze/counter bookkeeping with frozen
  * defaults; missing older fields fall back via zustand's shallow merge.
  */
+/** Ids of the demo planner items that shipped in seedPlanner (removed 2026-08-31). */
+export const SEED_PLANNER_IDS = ['t1', 't2', 't3', 't4'];
+
 export const migrateStore = (persisted: unknown, version: number) => {
-  const s = (persisted ?? {}) as Record<string, unknown>;
+  let s = (persisted ?? {}) as Record<string, unknown>;
   if (version < 3) {
-    return {
+    s = {
       ...s,
       streakFreezes: { available: 0, usedOn: [], runLength: 0 },
       streak: { current: 0, best: 0 },
       lastRolledDay: todayKey(),
       historyReconciled: false,
+    };
+  }
+  if (version < 4) {
+    // v4: drop the seeded demo planner items (id-only — user ids are
+    // `t<timestamp>-<seq>`, calendar imports are `cal-*`), and give existing
+    // installs the pre-toggle behaviour for the new permission-owning prefs.
+    const planner = Array.isArray(s.planner)
+      ? (s.planner as { id: string }[]).filter(
+          t => !SEED_PLANNER_IDS.includes(t.id),
+        )
+      : [];
+    const prefs = (s.prefs ?? {}) as Record<string, unknown>;
+    s = {
+      ...s,
+      planner,
+      prefs: { recap: true, weather: true, ...prefs },
     };
   }
   return s;
@@ -470,7 +496,10 @@ export const useStore = create<State>()(
         }
 
         let histories = s.histories;
-        let freezes = { ...s.streakFreezes, usedOn: [...s.streakFreezes.usedOn] };
+        let freezes = {
+          ...s.streakFreezes,
+          usedOn: [...s.streakFreezes.usedOn],
+        };
         let counter = { ...s.streak };
         let reconciled = s.historyReconciled;
 
@@ -568,7 +597,7 @@ export const useStore = create<State>()(
     }),
     {
       name: 'routiner-store',
-      version: 3,
+      version: 4,
       storage: routinerStorage,
       migrate: migrateStore as (p: unknown, v: number) => State,
     },
@@ -771,9 +800,11 @@ export const rate30 = (histories: Record<string, number[]>, habit: Habit) => {
   );
 };
 
-/** Points: 1000 + streak*40 + perfectDays*25 + total completions (Ember formula). */
+/**
+ * Points: streak*40 + perfectDays*25 + total completions. No baseline — a
+ * brand-new user has 0 points, not a fictional 1000 (10A seed honesty).
+ */
 export const karma = (s: StreakSlice) =>
-  1000 +
   dayStreak(s) * 40 +
   perfectDayCount(s) * 25 +
   s.habits.reduce((a, h) => a + totalOf(s, h), 0);

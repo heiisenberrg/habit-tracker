@@ -1,0 +1,52 @@
+appId: com.lucidbots.lucidbots
+---
+
+- launchApp
+- tapOn: "Profile"
+- tapOn: "Settings"
+- extendedWaitUntil:
+    visible: "Dark Mode"
+    timeout: 8000
+- tapOn:
+    rightOf: "Dark Mode"
+- takeScreenshot: d30-settings-dark
+- tapOn:
+    rightOf: "Evening recap"
+- takeScreenshot: d32-recap-toggle-prompt
+- tapOn:
+    text: "Allow"
+    optional: true
+- tapOn:
+    rightOf: "Weather & rain alerts"
+- takeScreenshot: d33-weather-toggle-prompt
+- tapOn:
+    text: "Allow While Using App"
+    optional: true
+- takeScreenshot: d34-settings-toggles-on
+- scrollUntilVisible:
+    element: "App Lock"
+    direction: DOWN
+- takeScreenshot: d31-settings-dark-lower
+- tapOn: "Back"
+- takeScreenshot: d29-profile-dark
+- tapOn: "Home"
+- takeScreenshot: d11-home-dark
+- tapOn: "Activity"
+- extendedWaitUntil:
+    visible: "All Habits"
+    timeout: 8000
+- takeScreenshot: d28-activity-dark
+- tapOn: "Home"
+- tapOn: "Ask Assistant"
+- extendedWaitUntil:
+    visible: ".*Quick log.*"
+    timeout: 8000
+- takeScreenshot: d24-assistant-dark
+- tapOn: "Back"
+- tapOn: ".*Drink water, .*opens details"
+- takeScreenshot: d21-habit-detail-dark
+- tapOn: "Back"
+- tapOn:
+    point: "20%,29%"
+- takeScreenshot: d40-calendar-dark
+- tapOn: "Back"

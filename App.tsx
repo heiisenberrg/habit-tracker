@@ -23,8 +23,12 @@ import {
 } from './src/services/notifications';
 import { scheduleRecap } from './src/services/recap';
 import { applyInterfaceStyle } from './src/services/theme';
+import { configureGeolocation } from './src/services/weather';
 import { pushStreakToWidget } from './src/services/widget';
 import { useStore } from './src/store/useStore';
+
+// Location prompts are owned by the Settings toggle — never auto-raised.
+configureGeolocation();
 
 // DEV screenshot aid: force a scheme for both-mode UI sweeps. Keep null.
 const FORCE_SCHEME: 'dark' | 'light' | null = null;

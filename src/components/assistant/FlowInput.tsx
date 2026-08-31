@@ -114,7 +114,10 @@ function FlowInput({
     );
   }
   return (
-    <ChipRow options={input.options} onPick={(v, label) => onAnswer(v, label)} />
+    <ChipRow
+      options={input.options}
+      onPick={(v, label) => onAnswer(v, label)}
+    />
   );
 }
 

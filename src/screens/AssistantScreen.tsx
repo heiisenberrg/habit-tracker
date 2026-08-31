@@ -424,7 +424,9 @@ function AssistantScreen() {
             draft={draft}
             onChangeDraft={setDraft}
             onSubmitDraft={submitDraft}
-            onAnswer={(v, label) => answerStep(v, chat.step?.echo?.(v) ?? label)}
+            onAnswer={(v, label) =>
+              answerStep(v, chat.step?.echo?.(v) ?? label)
+            }
             onCustomTime={() => setCustomTime(true)}
           />
         );
@@ -441,7 +443,11 @@ function AssistantScreen() {
     >
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
-        <IconButton size={40} onPress={() => navigation.goBack()}>
+        <IconButton
+          size={40}
+          accessibilityLabel="Back"
+          onPress={() => navigation.goBack()}
+        >
           <AppText variant="h6">‹</AppText>
         </IconButton>
         <View style={styles.avatar}>

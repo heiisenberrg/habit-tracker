@@ -129,7 +129,11 @@ function CalendarScreen() {
   return (
     <View style={styles.screen}>
       <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
-        <IconButton size={40} onPress={() => navigation.goBack()}>
+        <IconButton
+          size={40}
+          accessibilityLabel="Back"
+          onPress={() => navigation.goBack()}
+        >
           <AppText variant="h6">‹</AppText>
         </IconButton>
         <AppText variant="h6" style={styles.flex}>
@@ -137,6 +141,7 @@ function CalendarScreen() {
         </AppText>
         <IconButton
           size={32}
+          accessibilityLabel="Previous month"
           onPress={() =>
             setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))
           }
@@ -155,6 +160,7 @@ function CalendarScreen() {
         </AppText>
         <IconButton
           size={32}
+          accessibilityLabel="Next month"
           onPress={() =>
             setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))
           }
@@ -197,6 +203,9 @@ function CalendarScreen() {
             return (
               <Pressable
                 key={c.key}
+                accessibilityRole="button"
+                accessibilityLabel={c.key}
+                accessibilityState={{ selected: isSel }}
                 onPress={() => setSelected(c.key)}
                 style={[
                   styles.cell,
@@ -242,6 +251,9 @@ function CalendarScreen() {
           <Card key={t.id} style={styles.itemCard}>
             {t.type === 'task' ? (
               <Pressable
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: t.done }}
+                accessibilityLabel={`Mark ${t.title} done`}
                 onPress={() => togglePlannerItem(t.id)}
                 style={[styles.checkbox, t.done && styles.checkboxDone]}
               >
@@ -277,6 +289,8 @@ function CalendarScreen() {
             </View>
             {t.type === 'task' && !t.done && (
               <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Postpone ${t.title} one day`}
                 onPress={() =>
                   movePlannerItem(
                     t.id,
@@ -290,7 +304,12 @@ function CalendarScreen() {
                 </AppText>
               </Pressable>
             )}
-            <Pressable hitSlop={8} onPress={() => deletePlannerItem(t.id)}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Delete ${t.title}`}
+              hitSlop={8}
+              onPress={() => deletePlannerItem(t.id)}
+            >
               <AppText variant="body" color={colors.ink20}>
                 ✕
               </AppText>
@@ -320,6 +339,9 @@ function CalendarScreen() {
             {(['task', 'block'] as const).map(k => (
               <Pressable
                 key={k}
+                accessibilityRole="button"
+                accessibilityLabel={k === 'task' ? 'Task' : 'Time block'}
+                accessibilityState={{ selected: kind === k }}
                 onPress={() => setKind(k)}
                 style={[styles.kindChip, kind === k && styles.kindActive]}
               >

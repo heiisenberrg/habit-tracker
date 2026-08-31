@@ -15,6 +15,39 @@ try {
   Geolocation = null;
 }
 
+/**
+ * Never let a position read raise the iOS location dialog on its own: the
+ * Settings "Weather & rain alerts" toggle owns that ask via
+ * requestLocationPermission(). Called once at app start.
+ */
+export const configureGeolocation = (): void => {
+  try {
+    Geolocation?.setRNConfiguration?.({
+      skipPermissionRequests: true,
+      authorizationLevel: 'whenInUse',
+    });
+  } catch {
+    // no geolocation module (tests) — nothing to configure
+  }
+};
+
+/** Explicit, user-initiated location ask. Resolves true when authorized. */
+export const requestLocationPermission = (): Promise<boolean> =>
+  new Promise(resolve => {
+    if (typeof Geolocation?.requestAuthorization !== 'function') {
+      resolve(false);
+      return;
+    }
+    try {
+      Geolocation.requestAuthorization(
+        () => resolve(true),
+        () => resolve(false),
+      );
+    } catch {
+      resolve(false);
+    }
+  });
+
 export type Weather = {
   /** °C, rounded */
   temp: number;

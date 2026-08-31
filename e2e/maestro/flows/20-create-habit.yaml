@@ -1,0 +1,43 @@
+appId: com.lucidbots.lucidbots
+---
+
+- launchApp
+- extendedWaitUntil:
+    visible: "Hi, Aj.*"
+    timeout: 45000
+- tapOn:
+    point: "60%,29%"
+- extendedWaitUntil:
+    visible: ".*New Good Habit.*"
+    timeout: 6000
+- takeScreenshot: c01-quick-actions
+- tapOn: ".*New Good Habit.*"
+- extendedWaitUntil:
+    visible: ".*Create Custom Habit.*"
+    timeout: 6000
+- takeScreenshot: c02-new-good-habit
+- tapOn: ".*Create Custom Habit.*"
+- tapOn: ".*Try: Meditate x2.*"
+- inputText: "Stretch x3"
+- tapOn: "Create Custom Habit"
+- scrollUntilVisible:
+    element: "Remind me daily"
+    direction: DOWN
+- tapOn: "Daily reminder"
+- tapOn: ".*09:00.*"
+- inputText: "21:30"
+- tapOn: "Create Custom Habit"
+- takeScreenshot: c03-custom-habit-filled
+- tapOn: ".*Add Habit"
+- tapOn:
+    text: "Allow"
+    optional: true
+- extendedWaitUntil:
+    visible: ".*Stretch.*"
+    timeout: 10000
+- takeScreenshot: c04-home-with-stretch
+- tapOn: "Log Stretch"
+- tapOn: "Log Stretch"
+- tapOn: "Log Stretch"
+- assertVisible: "Stretch completed"
+- takeScreenshot: c05-stretch-done

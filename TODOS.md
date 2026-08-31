@@ -24,6 +24,21 @@ a single build.
 **Priority:** P1
 **Depends on:** Apple ID re-auth in Xcode
 
+## Polish
+
+### Onboarding page 2 artwork still shows social demo content (found 2026-08-31 QA)
+
+**What:** `src/assets` onboarding illustration for "Track Your Progress" is a
+baked PNG showing "Best Runners! · 2 friends joined", friend avatars and a
+"+3" pile on habit cards. The T13 copy scrub covered strings, not artwork;
+for a single-user app this promises a social layer that does not exist.
+
+**Fix:** replace the page-2 (and ideally page-3 avatar) illustrations with
+Routiner-only art (progress ring + week strip). Needs a supplied/generated
+image asset — same blocker class as the widget avatar swap.
+
+**Effort:** S (once art exists) · **Priority:** P3
+
 ## Shield
 
 ### Activate the ShieldConfiguration extension (D8, auto-deferred 2026-08-30)
@@ -67,6 +82,57 @@ refusal is unlikely).
 **Effort:** M
 **Priority:** P3
 **Depends on:** Shield extension + 1A payload (in the 2026-08-30 plan)
+
+## Store
+
+### Prune `completions` entries older than the 83-day history window (eng review 2026-08-31)
+
+**What:** In `rollDays` (src/store/useStore.ts), after the per-day `histories`
+shift, delete `completions[habitId][dateKey]` entries whose dateKey has
+rolled out of the 83-slot window.
+
+**Why:** The map grows forever (habits × logged days). Every scan of it
+(`engaged` on Home, backup export, widget payload, `dayCompletion` for old
+dates) gets linearly slower and the persisted JSON blob grows with it.
+
+**Pros:** Bounded store size; scans stay O(83 × habits).
+**Cons:** Rollover gains a deletion step; any future view looking back past
+83 days must read `histories`, not raw completions.
+
+**Context:** Surfaced by the Performance section of the 2026-08-31 eng
+review of the QA-fix diff. Cost today is negligible (~2k entries after a
+year with 6 habits), so this is hygiene. The reconciliation branch of
+`rollDays` already iterates dateKeys — start there.
+
+**Effort:** S · **Priority:** P4
+**Depends on:** Rollover trusted on the device for a few weeks first.
+
+## CI
+
+### Run the Maestro e2e flows on every push (eng review 2026-08-31)
+
+**What:** GitHub Actions job on a macOS runner: build the Release simulator
+app (`xcodebuild … -sdk iphonesimulator CODE_SIGN_IDENTITY="-"`), boot an
+iPhone simulator, `brew install --formula mobile-dev-inc/tap/maestro`, then
+`SIM_UDID=<booted> ./e2e/maestro/run-flows.sh 00-new-user 10-home-flows
+15-dark-mode 20-create-habit 30-monkey` and upload `e2e/maestro/shots/out`.
+
+**Why:** The five flows only run when someone remembers to; the new-user
+path, dark mode and the crash monkey are the checks most likely to regress
+silently.
+
+**Pros:** Every push proves the first-run experience and zero crashes;
+screenshots become a per-commit visual record.
+**Cons:** macOS runners are slow (~10 min cold build) and metered; simulator
+flakiness needs a retry; the Maestro iOS driver install adds ~1 min.
+
+**Context:** `run-flows.sh` already reports app-process liveness and new
+crash reports, so the job is plumbing. This repo has no CI at all yet —
+a unit-test job (`npm test`) should land first in the same workflow.
+
+**Effort:** M · **Priority:** P3
+**Depends on:** T8 env-parameterized runner (2026-08-31 eng review); a
+GitHub Actions macOS budget.
 
 ## UI
 

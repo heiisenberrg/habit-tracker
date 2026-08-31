@@ -15,7 +15,6 @@ import { Card, IconButton, SegmentControl } from '../components/common';
 import { MOOD_FACES } from '../data/seed';
 import { getLastNightSleep, SleepSummary } from '../services/health';
 import {
-  activeOn,
   addDays,
   dayCompletion,
   dayStreak,
@@ -380,6 +379,7 @@ function ActivityScreen() {
           </View>
           <IconButton
             size={34}
+            accessibilityLabel="Earlier period"
             onPress={() => setOffset(o => Math.min(MAX_OFFSET[seg], o + 1))}
           >
             <AppText
@@ -391,6 +391,7 @@ function ActivityScreen() {
           </IconButton>
           <IconButton
             size={34}
+            accessibilityLabel="Later period"
             onPress={() => setOffset(o => Math.max(0, o - 1))}
           >
             <AppText

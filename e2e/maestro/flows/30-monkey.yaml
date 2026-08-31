@@ -1,0 +1,345 @@
+appId: com.lucidbots.lucidbots
+---
+- launchApp
+- tapOn:
+    point: "27%,74%"
+- tapOn:
+    point: "89%,19%"
+- tapOn:
+    point: "90%,81%"
+- tapOn:
+    point: "84%,19%"
+- swipe:
+    start: "56%,50%"
+    end: "74%,39%"
+- tapOn:
+    point: "56%,42%"
+- back
+- tapOn:
+    point: "37%,81%"
+- tapOn:
+    point: "19%,21%"
+- swipe:
+    start: "38%,13%"
+    end: "35%,84%"
+- tapOn:
+    point: "45%,23%"
+- tapOn:
+    point: "54%,21%"
+- launchApp
+- tapOn:
+    point: "71%,52%"
+- tapOn:
+    point: "29%,70%"
+- tapOn:
+    point: "44%,49%"
+- tapOn:
+    point: "82%,86%"
+- tapOn:
+    point: "37%,19%"
+- inputText: "monkey 42"
+- tapOn:
+    point: "47%,50%"
+- tapOn:
+    point: "6%,51%"
+- inputText: "monkey 42"
+- tapOn:
+    point: "68%,74%"
+- tapOn:
+    point: "87%,37%"
+- tapOn:
+    point: "73%,93%"
+- launchApp
+- tapOn:
+    point: "42%,75%"
+- inputText: "monkey 42"
+- swipe:
+    start: "33%,57%"
+    end: "68%,87%"
+- tapOn:
+    point: "17%,63%"
+- tapOn:
+    point: "81%,77%"
+- swipe:
+    start: "11%,31%"
+    end: "22%,76%"
+- tapOn:
+    point: "5%,59%"
+- tapOn:
+    point: "18%,37%"
+- swipe:
+    start: "71%,63%"
+    end: "70%,43%"
+- tapOn:
+    point: "68%,52%"
+- tapOn:
+    point: "62%,37%"
+- tapOn:
+    point: "65%,82%"
+- launchApp
+- tapOn:
+    point: "11%,85%"
+- tapOn:
+    point: "49%,19%"
+- tapOn:
+    point: "93%,28%"
+- tapOn:
+    point: "76%,70%"
+- takeScreenshot: m040
+- back
+- tapOn:
+    point: "58%,89%"
+- tapOn:
+    point: "39%,73%"
+- tapOn:
+    point: "60%,93%"
+- tapOn:
+    point: "54%,38%"
+- tapOn:
+    point: "49%,84%"
+- tapOn:
+    point: "64%,69%"
+- tapOn:
+    point: "4%,70%"
+- launchApp
+- swipe:
+    start: "13%,70%"
+    end: "66%,20%"
+- tapOn:
+    point: "38%,48%"
+- tapOn:
+    point: "94%,46%"
+- tapOn:
+    point: "24%,41%"
+- tapOn:
+    point: "3%,21%"
+- tapOn:
+    point: "9%,57%"
+- tapOn:
+    point: "66%,58%"
+- tapOn:
+    point: "22%,61%"
+- tapOn:
+    point: "95%,53%"
+- tapOn:
+    point: "30%,87%"
+- inputText: "monkey 42"
+- tapOn:
+    point: "38%,52%"
+- launchApp
+- tapOn:
+    point: "22%,86%"
+- tapOn:
+    point: "40%,54%"
+- tapOn:
+    point: "70%,33%"
+- back
+- tapOn:
+    point: "12%,40%"
+- swipe:
+    start: "68%,64%"
+    end: "28%,21%"
+- tapOn:
+    point: "38%,37%"
+- swipe:
+    start: "71%,90%"
+    end: "39%,38%"
+- tapOn:
+    point: "49%,28%"
+- swipe:
+    start: "58%,24%"
+    end: "51%,85%"
+- tapOn:
+    point: "87%,15%"
+- tapOn:
+    point: "83%,48%"
+- launchApp
+- swipe:
+    start: "35%,10%"
+    end: "17%,10%"
+- tapOn:
+    point: "69%,54%"
+- inputText: "monkey 42"
+- tapOn:
+    point: "57%,17%"
+- inputText: "monkey 42"
+- tapOn:
+    point: "17%,69%"
+- swipe:
+    start: "57%,37%"
+    end: "63%,45%"
+- swipe:
+    start: "23%,14%"
+    end: "42%,13%"
+- takeScreenshot: m080
+- tapOn:
+    point: "24%,26%"
+- back
+- tapOn:
+    point: "50%,78%"
+- tapOn:
+    point: "4%,28%"
+- launchApp
+- back
+- tapOn:
+    point: "55%,66%"
+- tapOn:
+    point: "77%,55%"
+- inputText: "monkey 42"
+- swipe:
+    start: "82%,71%"
+    end: "39%,25%"
+- back
+- tapOn:
+    point: "59%,92%"
+- tapOn:
+    point: "83%,27%"
+- tapOn:
+    point: "9%,57%"
+- tapOn:
+    point: "29%,47%"
+- tapOn:
+    point: "96%,27%"
+- tapOn:
+    point: "42%,42%"
+- launchApp
+- tapOn:
+    point: "46%,39%"
+- back
+- swipe:
+    start: "37%,90%"
+    end: "60%,24%"
+- tapOn:
+    point: "86%,24%"
+- tapOn:
+    point: "88%,17%"
+- tapOn:
+    point: "86%,62%"
+- tapOn:
+    point: "47%,64%"
+- inputText: "monkey 42"
+- tapOn:
+    point: "3%,28%"
+- tapOn:
+    point: "81%,24%"
+- tapOn:
+    point: "91%,14%"
+- tapOn:
+    point: "38%,51%"
+- launchApp
+- tapOn:
+    point: "95%,61%"
+- tapOn:
+    point: "95%,46%"
+- tapOn:
+    point: "92%,40%"
+- tapOn:
+    point: "32%,39%"
+- tapOn:
+    point: "79%,39%"
+- tapOn:
+    point: "48%,67%"
+- inputText: "monkey 42"
+- inputText: "monkey 42"
+- swipe:
+    start: "86%,65%"
+    end: "76%,31%"
+- tapOn:
+    point: "43%,63%"
+- tapOn:
+    point: "60%,22%"
+- tapOn:
+    point: "83%,92%"
+- takeScreenshot: m120
+- launchApp
+- tapOn:
+    point: "59%,49%"
+- tapOn:
+    point: "52%,33%"
+- tapOn:
+    point: "12%,92%"
+- tapOn:
+    point: "74%,86%"
+- tapOn:
+    point: "46%,41%"
+- tapOn:
+    point: "54%,31%"
+- tapOn:
+    point: "3%,52%"
+- swipe:
+    start: "85%,38%"
+    end: "10%,31%"
+- tapOn:
+    point: "19%,89%"
+- back
+- tapOn:
+    point: "88%,66%"
+- tapOn:
+    point: "70%,68%"
+- launchApp
+- tapOn:
+    point: "5%,39%"
+- tapOn:
+    point: "35%,35%"
+- swipe:
+    start: "45%,18%"
+    end: "76%,84%"
+- tapOn:
+    point: "42%,37%"
+- tapOn:
+    point: "37%,65%"
+- tapOn:
+    point: "87%,88%"
+- tapOn:
+    point: "97%,16%"
+- swipe:
+    start: "67%,84%"
+    end: "80%,65%"
+- tapOn:
+    point: "55%,24%"
+- tapOn:
+    point: "86%,47%"
+- tapOn:
+    point: "66%,27%"
+- tapOn:
+    point: "45%,21%"
+- launchApp
+- tapOn:
+    point: "32%,69%"
+- tapOn:
+    point: "20%,54%"
+- tapOn:
+    point: "68%,57%"
+- inputText: "monkey 42"
+- tapOn:
+    point: "95%,9%"
+- tapOn:
+    point: "87%,61%"
+- swipe:
+    start: "76%,74%"
+    end: "14%,83%"
+- tapOn:
+    point: "23%,49%"
+- tapOn:
+    point: "49%,55%"
+- tapOn:
+    point: "38%,17%"
+- tapOn:
+    point: "77%,54%"
+- tapOn:
+    point: "11%,46%"
+- launchApp
+- tapOn:
+    point: "20%,69%"
+- tapOn:
+    point: "8%,88%"
+- tapOn:
+    point: "60%,33%"
+- tapOn:
+    point: "44%,93%"
+- takeScreenshot: m160
+- launchApp
+- extendedWaitUntil:
+    visible: ".*(Home|Back|Routiner Assistant|Continue with E-mail).*"
+    timeout: 20000
+- takeScreenshot: m-final

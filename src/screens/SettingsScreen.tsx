@@ -35,9 +35,12 @@ import { connectCalendar } from '../services/deviceCalendar';
 import { connectHealth } from '../services/health';
 import {
   cancelReminder,
+  requestNotificationPermission,
   resyncReminders,
   scheduleDailyReminder,
 } from '../services/notifications';
+import { scheduleRecap } from '../services/recap';
+import { requestLocationPermission } from '../services/weather';
 import { applyInterfaceStyle } from '../services/theme';
 import { useStore } from '../store/useStore';
 import {
@@ -60,6 +63,8 @@ const GENERAL: Row[] = [
   { key: 'notifications', label: 'Notifications', icon: '🔔', type: 'link' },
   { key: 'sounds', label: 'Sounds', icon: '🔊', type: 'toggle' },
   { key: 'vacation', label: 'Vacation Mode', icon: '🏝', type: 'toggle' },
+  { key: 'recap', label: 'Evening recap', icon: '🌆', type: 'toggle' },
+  { key: 'weather', label: 'Weather & rain alerts', icon: '🌦', type: 'toggle' },
 ];
 
 const ABOUT: Row[] = [
@@ -343,11 +348,77 @@ function SettingsScreen() {
     }
   };
 
+  /* --------------- permission-owning toggles (eng review 2026-08-31) ---- */
+  // Boot and background paths never raise an OS dialog; these two switches
+  // are the only places (besides creating a habit reminder) that do.
+  const toggleRecap = async (on: boolean) => {
+    if (!on) {
+      setPref('recap', false);
+      scheduleRecap();
+      return;
+    }
+    const ok = await requestNotificationPermission();
+    setPref('recap', ok);
+    if (ok) {
+      scheduleRecap();
+    } else {
+      Alert.alert(
+        'Notifications are off',
+        'Allow notifications for Routiner in iOS Settings to get the evening recap.',
+      );
+    }
+  };
+
+  const toggleWeather = async (on: boolean) => {
+    if (!on) {
+      setPref('weather', false);
+      return;
+    }
+    const ok = await requestLocationPermission();
+    setPref('weather', ok);
+    if (!ok) {
+      Alert.alert(
+        'Location is off',
+        'Allow location for Routiner in iOS Settings to show local weather and rain alerts.',
+      );
+    }
+  };
+
+  const toggleValue = (key: string): boolean =>
+    key === 'dark'
+      ? darkMode
+      : key === 'sounds'
+      ? prefs.sounds
+      : key === 'vacation'
+      ? prefs.vacationMode
+      : key === 'recap'
+      ? prefs.recap
+      : prefs.weather;
+
+  const onToggle = (key: string, v: boolean) => {
+    if (key === 'dark') {
+      setDarkMode(v);
+      Appearance.setColorScheme(v ? 'dark' : 'light');
+      applyInterfaceStyle(v ? 'dark' : 'light');
+    } else if (key === 'sounds') {
+      setPref('sounds', v);
+    } else if (key === 'vacation') {
+      toggleVacation(v);
+    } else if (key === 'recap') {
+      toggleRecap(v);
+    } else {
+      toggleWeather(v);
+    }
+  };
+
   const renderRow = (row: Row, isLast: boolean) => (
     <Pressable
       key={row.key}
       onPress={() => onRowPress(row.key)}
       disabled={row.type === 'toggle'}
+      // Toggle rows: keep the Switch its own VoiceOver element instead of
+      // merging label + switch into one inert container.
+      accessible={row.type !== 'toggle'}
       style={[styles.row, !isLast && styles.rowBorder]}
     >
       <View style={styles.iconChip}>
@@ -358,24 +429,9 @@ function SettingsScreen() {
       </AppText>
       {row.type === 'toggle' ? (
         <Switch
-          value={
-            row.key === 'dark'
-              ? darkMode
-              : row.key === 'sounds'
-              ? prefs.sounds
-              : prefs.vacationMode
-          }
-          onValueChange={v => {
-            if (row.key === 'dark') {
-              setDarkMode(v);
-              Appearance.setColorScheme(v ? 'dark' : 'light');
-              applyInterfaceStyle(v ? 'dark' : 'light');
-            } else if (row.key === 'sounds') {
-              setPref('sounds', v);
-            } else {
-              toggleVacation(v);
-            }
-          }}
+          accessibilityLabel={row.label}
+          value={toggleValue(row.key)}
+          onValueChange={v => onToggle(row.key, v)}
           trackColor={{ true: colors.green, false: colors.ink10 }}
         />
       ) : (
@@ -389,7 +445,11 @@ function SettingsScreen() {
   return (
     <View style={styles.screen}>
       <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
-        <IconButton size={40} onPress={() => navigation.goBack()}>
+        <IconButton
+          size={40}
+          accessibilityLabel="Back"
+          onPress={() => navigation.goBack()}
+        >
           <AppText variant="h6">‹</AppText>
         </IconButton>
         <AppText variant="h6">Settings</AppText>
@@ -422,6 +482,7 @@ function SettingsScreen() {
               </AppText>
             </View>
             <Switch
+              accessibilityLabel="Apple Health"
               value={healthConnected}
               onValueChange={toggleHealth}
               trackColor={{ true: colors.green, false: colors.ink10 }}
@@ -438,6 +499,7 @@ function SettingsScreen() {
               </AppText>
             </View>
             <Switch
+              accessibilityLabel="Device Calendar"
               value={calendarConnected}
               onValueChange={toggleCalendar}
               trackColor={{ true: colors.green, false: colors.ink10 }}
@@ -461,6 +523,7 @@ function SettingsScreen() {
               </AppText>
             </View>
             <Switch
+              accessibilityLabel="App Lock"
               value={appLock.enabled}
               onValueChange={toggleAppLock}
               trackColor={{ true: colors.green, false: colors.ink10 }}
@@ -523,6 +586,7 @@ function SettingsScreen() {
               </AppText>
             </View>
             <Switch
+              accessibilityLabel="Zen runs iOS Focus"
               value={zen.useFocusShortcut}
               onValueChange={v => {
                 setZen({ useFocusShortcut: v });

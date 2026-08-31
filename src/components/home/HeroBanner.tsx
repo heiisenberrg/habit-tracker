@@ -53,7 +53,9 @@ function HeroBanner({
         </ProgressRing>
         <View style={styles.flex}>
           <AppText variant="title" color={colors.white}>
-            {habitCount > 0 && doneCount === habitCount
+            {habitCount === 0
+              ? 'Add your first habit ✨'
+              : doneCount === habitCount
               ? 'Perfect day — streak secured! 🔥'
               : doneCount === 0
               ? 'Fresh day. Start small.'

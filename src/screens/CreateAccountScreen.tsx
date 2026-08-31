@@ -45,6 +45,20 @@ const FIRST_HABITS: FirstHabit[] = [
     step: 500,
   },
   {
+    id: 'fh-walk',
+    name: 'Walk',
+    emoji: '🚶🏻',
+    goal: { amount: 10000, unit: 'STEPS' },
+    step: 1000,
+  },
+  {
+    id: 'fh-plants',
+    name: 'Water Plants',
+    emoji: '🌿',
+    goal: { amount: 1, unit: 'TIMES' },
+    step: 1,
+  },
+  {
     id: 'fh-run',
     name: 'Run',
     emoji: '🏃🏻‍♀️',
@@ -76,13 +90,6 @@ const FIRST_HABITS: FirstHabit[] = [
     id: 'fh-journal',
     name: 'Journal',
     emoji: '📕',
-    goal: { amount: 1, unit: 'TIMES' },
-    step: 1,
-  },
-  {
-    id: 'fh-plants',
-    name: 'Plant care',
-    emoji: '🌿',
     goal: { amount: 1, unit: 'TIMES' },
     step: 1,
   },
@@ -207,8 +214,17 @@ function CreateAccountScreen() {
   const firstChoices = FIRST_HABITS.filter(
     fh => !ownedNames.has(normHabit(fh.name)),
   );
+  // Two sensible defaults pre-selected; the user owns the final set.
   const [selected, setSelected] = useState<string[]>(
-    firstChoices[0] ? [firstChoices[0].id] : [],
+    firstChoices
+      .filter(fh => fh.id === 'fh-water' || fh.id === 'fh-walk')
+      .map(fh => fh.id)
+      .concat(
+        firstChoices.length &&
+          !firstChoices.some(fh => fh.id === 'fh-water' || fh.id === 'fh-walk')
+          ? [firstChoices[0].id]
+          : [],
+      ),
   );
 
   const back = () => (step > 0 ? setStep(step - 1) : navigation.goBack());
@@ -267,7 +283,7 @@ function CreateAccountScreen() {
       style={styles.screen}
     >
       <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
-        <IconButton size={40} onPress={back}>
+        <IconButton size={40} accessibilityLabel="Back" onPress={back}>
           <AppText variant="h6">‹</AppText>
         </IconButton>
         <View>

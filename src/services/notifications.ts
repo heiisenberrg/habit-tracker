@@ -106,6 +106,24 @@ export const requestNotificationPermission = async (): Promise<boolean> => {
   }
 };
 
+/**
+ * Permission check that NEVER prompts. Passive schedulers (evening recap,
+ * rain heads-ups) run at boot and on Home mount; a brand-new user must not
+ * get the OS permission dialog over the splash screen. Only user-initiated
+ * paths (setting a reminder) may call requestNotificationPermission.
+ */
+export const hasNotificationPermission = async (): Promise<boolean> => {
+  if (!notificationsAvailable()) {
+    return false;
+  }
+  try {
+    const settings = await notifee.getNotificationSettings();
+    return settings.authorizationStatus >= 1;
+  } catch {
+    return false;
+  }
+};
+
 /** iOS notification options honoring the in-app "Sounds" preference. */
 const iosOptions = (): { sound?: string } =>
   useStore.getState().prefs.sounds ? { sound: 'default' } : {};
@@ -134,7 +152,12 @@ export const scheduleDailyReminder = async (
   if (!notificationsAvailable()) {
     return false;
   }
-  const granted = await requestNotificationPermission();
+  // Boot-time resync (silent) never prompts: a reminder restored from a
+  // backup onto a device that never granted permission stays quiet until
+  // the user touches a reminder or the recap toggle.
+  const granted = options?.silent
+    ? await hasNotificationPermission()
+    : await requestNotificationPermission();
   if (!granted) {
     return false;
   }
@@ -173,7 +196,10 @@ export const scheduleDailyReminder = async (
               }))
             : undefined,
         },
-        ios: { ...iosOptions(), categoryId: info ? `habit-${habitId}` : undefined },
+        ios: {
+          ...iosOptions(),
+          categoryId: info ? `habit-${habitId}` : undefined,
+        },
       },
       {
         type: TriggerType.TIMESTAMP,
@@ -193,26 +219,57 @@ export const scheduleDailyReminder = async (
   }
 };
 
-/** Show an immediate one-off notification (e.g. a weather heads-up). */
+/** Android channel descriptors for the passive (never-prompting) paths. */
+export type NotificationChannel = { id: string; name: string };
+export const WEATHER_CHANNEL: NotificationChannel = {
+  id: 'weather',
+  name: 'Weather alerts',
+};
+export const RECAP_CHANNEL: NotificationChannel = {
+  id: 'recap',
+  name: 'Evening recap',
+};
+
+/**
+ * Shared gate for every passive path: notifee present, permission ALREADY
+ * granted (never prompts — only scheduleDailyReminder and the Settings
+ * "Evening recap" toggle may raise the OS dialog), channel ensured.
+ * Resolves the channel id, or null when the notification must be skipped.
+ */
+const passiveChannelReady = async (
+  channel: NotificationChannel,
+): Promise<string | null> => {
+  if (!notificationsAvailable()) {
+    return null;
+  }
+  if (!(await hasNotificationPermission())) {
+    return null;
+  }
+  try {
+    return (
+      (await notifee.createChannel?.({
+        id: channel.id,
+        name: channel.name,
+        importance: AndroidImportance?.HIGH,
+      })) ?? channel.id
+    );
+  } catch {
+    return channel.id;
+  }
+};
+
+/** Show an immediate one-off notification (e.g. a weather heads-up). Passive. */
 export const displayNotification = async (
   id: string,
   title: string,
   body: string,
+  channel: NotificationChannel = WEATHER_CHANNEL,
 ): Promise<boolean> => {
-  if (!notificationsAvailable()) {
-    return false;
-  }
-  const granted = await requestNotificationPermission();
-  if (!granted) {
+  const channelId = await passiveChannelReady(channel);
+  if (!channelId) {
     return false;
   }
   try {
-    const channelId =
-      (await notifee.createChannel?.({
-        id: 'weather',
-        name: 'Weather alerts',
-        importance: AndroidImportance?.HIGH,
-      })) ?? 'weather';
     await notifee.displayNotification({
       id,
       title,
@@ -227,27 +284,19 @@ export const displayNotification = async (
   }
 };
 
-/** Schedule a one-off OS-delivered notification at an exact timestamp. */
+/** Schedule a one-off OS-delivered notification at an exact timestamp. Passive. */
 export const scheduleOneOffNotification = async (
   id: string,
   title: string,
   body: string,
   timestamp: number,
+  channel: NotificationChannel = WEATHER_CHANNEL,
 ): Promise<boolean> => {
-  if (!notificationsAvailable()) {
-    return false;
-  }
-  const granted = await requestNotificationPermission();
-  if (!granted) {
+  const channelId = await passiveChannelReady(channel);
+  if (!channelId) {
     return false;
   }
   try {
-    const channelId =
-      (await notifee.createChannel?.({
-        id: 'weather',
-        name: 'Weather alerts',
-        importance: AndroidImportance?.HIGH,
-      })) ?? 'weather';
     await notifee.createTriggerNotification(
       {
         id,

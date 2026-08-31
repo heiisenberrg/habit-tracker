@@ -91,7 +91,11 @@ function CreateCustomHabitScreen() {
   return (
     <View style={styles.screen}>
       <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
-        <IconButton size={40} onPress={() => navigation.goBack()}>
+        <IconButton
+          size={40}
+          accessibilityLabel="Back"
+          onPress={() => navigation.goBack()}
+        >
           <AppText variant="h6">‹</AppText>
         </IconButton>
         <AppText variant="h6">Create Custom Habit</AppText>
@@ -216,6 +220,7 @@ function CreateCustomHabitScreen() {
               </View>
             </View>
             <Switch
+              accessibilityLabel="Daily reminder"
               value={reminder}
               onValueChange={setReminder}
               trackColor={{ true: colors.blue, false: colors.ink10 }}

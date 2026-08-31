@@ -17,15 +17,23 @@ export function Card({
   style,
   children,
   onPress,
+  accessible,
 }: {
   style?: ViewStyle | ViewStyle[];
   children: React.ReactNode;
   onPress?: () => void;
+  /**
+   * Pass `false` when the card holds its own controls (e.g. a "Log" button):
+   * a pressable container otherwise merges every child into ONE VoiceOver
+   * element, so the inner button can never be activated on its own.
+   */
+  accessible?: boolean;
 }) {
   const content = <View style={[styles.card, style]}>{children}</View>;
   if (onPress) {
     return (
       <Pressable
+        accessible={accessible}
         onPress={onPress}
         style={({ pressed }) => pressed && styles.pressed}
       >
@@ -42,14 +50,19 @@ export function IconButton({
   onPress,
   size = 48,
   style,
+  accessibilityLabel,
 }: {
   children: React.ReactNode;
   onPress?: () => void;
   size?: number;
   style?: ViewStyle;
+  /** Icon-only buttons are invisible to VoiceOver without a label. */
+  accessibilityLabel?: string;
 }) {
   return (
     <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
       onPress={onPress}
       style={({ pressed }) => [
         styles.iconButton,

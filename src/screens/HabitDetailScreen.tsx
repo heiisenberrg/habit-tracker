@@ -47,7 +47,11 @@ function HabitDetailScreen() {
     return (
       <View style={styles.screen}>
         <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
-          <IconButton size={40} onPress={() => navigation.goBack()}>
+          <IconButton
+            size={40}
+            accessibilityLabel="Back"
+            onPress={() => navigation.goBack()}
+          >
             <AppText variant="h6">‹</AppText>
           </IconButton>
           <AppText variant="h6" style={styles.flex}>
@@ -133,7 +137,11 @@ function HabitDetailScreen() {
   return (
     <View style={styles.screen}>
       <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
-        <IconButton size={40} onPress={() => navigation.goBack()}>
+        <IconButton
+          size={40}
+          accessibilityLabel="Back"
+          onPress={() => navigation.goBack()}
+        >
           <AppText variant="h6">‹</AppText>
         </IconButton>
         <AppText variant="h6" style={styles.flex}>

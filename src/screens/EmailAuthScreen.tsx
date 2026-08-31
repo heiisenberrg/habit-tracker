@@ -33,7 +33,11 @@ function EmailAuthScreen() {
     >
       <View style={[styles.content, { paddingTop: insets.top + spacing.sm }]}>
         <View style={styles.header}>
-          <IconButton size={40} onPress={() => navigation.goBack()}>
+          <IconButton
+            size={40}
+            accessibilityLabel="Back"
+            onPress={() => navigation.goBack()}
+          >
             <AppText variant="h6">‹</AppText>
           </IconButton>
           <AppText variant="h6">Continue with E-mail</AppText>

@@ -128,10 +128,17 @@ function HomeScreen() {
   // plus rain heads-ups for today's scheduled tasks and habit reminders.
   // Re-runs when the schedule changes; forecast is cached and alerts
   // dedupe per item per day, so repeats are cheap and quiet.
+  // The Settings "Weather & rain alerts" toggle owns the location ask
+  // (App.tsx configures skipPermissionRequests). Off → no chip, no checks.
+  const weatherOn = store.prefs.weather;
   useEffect(() => {
+    if (!weatherOn) {
+      setWeather(null);
+      return;
+    }
     getCurrentWeather().then(setWeather);
     checkRainForSchedule(planner, habits);
-  }, [planner, habits]);
+  }, [weatherOn, planner, habits]);
 
   // Device calendar sync -> today's time blocks
   useEffect(() => {
@@ -181,7 +188,16 @@ function HomeScreen() {
               </AppText>
             </View>
           )}
-          <IconButton onPress={() => navigation.navigate('Notifications')}>
+          <IconButton
+            accessibilityLabel="Ask Assistant"
+            onPress={() => navigation.navigate('Assistant')}
+          >
+            <AppText variant="h6">✨</AppText>
+          </IconButton>
+          <IconButton
+            accessibilityLabel="Notifications"
+            onPress={() => navigation.navigate('Notifications')}
+          >
             <NotificationIcon size={24} />
             {inbox.some(i => !i.read) && (
               <View style={styles.notifDot}>
@@ -284,28 +300,6 @@ function HomeScreen() {
           }
         />
       </ScrollView>
-
-      {/* Assistant FAB */}
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Ask Assistant"
-        onPress={() => navigation.navigate('Assistant')}
-        style={({ pressed }) => [
-          styles.fab,
-          { bottom: Math.max(insets.bottom, 12) + 92 },
-          pressed && { opacity: 0.85 },
-        ]}
-      >
-        <LinearGradient
-          colors={gradients.blue}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.gradientFill}
-        />
-        <AppText variant="h6" color="#FFFFFF">
-          ✨
-        </AppText>
-      </Pressable>
     </View>
   );
 }
@@ -362,21 +356,6 @@ const styles = StyleSheet.create({
     right: 0,
     top: 0,
     bottom: 0,
-  },
-  fab: {
-    position: 'absolute',
-    right: screenPadding,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-    shadowColor: '#232C5D',
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 8,
   },
 });
 

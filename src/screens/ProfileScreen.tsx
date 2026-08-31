@@ -36,7 +36,11 @@ function ProfileScreen() {
           <AppText variant="h5" style={styles.flex}>
             Your Profile
           </AppText>
-          <IconButton size={44} onPress={() => navigation.navigate('Settings')}>
+          <IconButton
+            size={44}
+            accessibilityLabel="Settings"
+            onPress={() => navigation.navigate('Settings')}
+          >
             <SettingsIcon size={22} />
           </IconButton>
         </View>
@@ -93,7 +97,11 @@ function ProfileScreen() {
               <AppText variant="body" color={colors.ink40} style={styles.flex}>
                 Showing last 30 days
               </AppText>
-              <IconButton size={32} onPress={() => setOldestFirst(v => !v)}>
+              <IconButton
+                size={32}
+                accessibilityLabel="Reverse activity order"
+                onPress={() => setOldestFirst(v => !v)}
+              >
                 <AppText variant="alt" color={colors.ink60}>
                   ⇅
                 </AppText>

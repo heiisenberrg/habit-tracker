@@ -30,6 +30,9 @@ function TasksSection({ tasks, onToggle, onMove, onDelete }: Props) {
         <Card key={t.id} style={styles.taskCard}>
           {t.type === 'task' ? (
             <Pressable
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: t.done }}
+              accessibilityLabel={`Mark ${t.title} done`}
               onPress={() => onToggle(t.id)}
               style={[styles.checkbox, t.done && styles.checkboxDone]}
             >
@@ -65,6 +68,8 @@ function TasksSection({ tasks, onToggle, onMove, onDelete }: Props) {
           </View>
           {t.type === 'task' && !t.done && (
             <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Postpone ${t.title} one day`}
               onPress={() =>
                 onMove(t.id, toDateKey(addDays(new Date(`${t.date}T00:00`), 1)))
               }
@@ -75,7 +80,12 @@ function TasksSection({ tasks, onToggle, onMove, onDelete }: Props) {
               </AppText>
             </Pressable>
           )}
-          <Pressable hitSlop={8} onPress={() => onDelete(t.id)}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Delete ${t.title}`}
+            hitSlop={8}
+            onPress={() => onDelete(t.id)}
+          >
             <AppText variant="body" color={colors.ink20}>
               ✕
             </AppText>

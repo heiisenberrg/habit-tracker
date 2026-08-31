@@ -77,3 +77,6 @@ yarn-error.log
 
 # Device build derived data
 ios/build-device/
+
+# Maestro e2e artifacts
+e2e/maestro/shots/
