@@ -386,7 +386,7 @@ function SettingsScreen() {
     } else if (key === 'about') {
       Alert.alert(
         `Routiner v${APP_VERSION}`,
-        'A small personal habit tracker: build good habits, quit bad ones, and keep the streak alive. Your data stays on this device.',
+        'A small personal habit tracker: build good habits, quit bad ones, and keep the streak alive. Your data stays on this device.\n\nQuote of the day provided by ZenQuotes API (zenquotes.io).',
       );
     }
   };
