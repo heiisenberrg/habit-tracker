@@ -83,6 +83,71 @@ refusal is unlikely).
 **Priority:** P3
 **Depends on:** Shield extension + 1A payload (in the 2026-08-30 plan)
 
+## Design
+
+### Write the design system down — DESIGN.md via /design-consultation (design review 2026-08-31)
+
+**What:** Run `/design-consultation` to produce DESIGN.md: palette + usage rules
+(text under 16pt uses `ink60`; `ink40` is for glyphs/disabled), the type scale,
+radius/spacing/shadow policy, the icon-language decision (emoji-forward vs
+vector), and the card-vs-layout stance.
+
+**Why:** Three reviews in two days each re-derived the same calibration from
+`src/theme/theme.ts`, and the 2026-08-31 design review parked one decision
+(Settings emoji icon chips) explicitly on this missing document.
+
+**Pros:** Every future UI decision has a reference; slop tells get a considered
+answer once. **Cons:** ~30 min interactive session; it will also surface
+opinions on pre-existing screens.
+
+**Context:** Tokens in `src/theme/theme.ts`; component vocabulary in
+`src/components/common.tsx` and `icons.tsx`; today's simulator screenshots
+under `e2e/maestro/shots/out/` are the corpus.
+
+**Effort:** S · **Priority:** P2 · **Depends on:** nothing
+
+### Sweep pre-existing `ink40` text to `ink60` (design review 2026-08-31, decision 10A)
+
+**What:** Change every `variant="alt"` / `body` text using `colors.ink40` on
+light surfaces (habit card meta, hero sub-lines, Activity captions, calendar
+labels, chip captions) to `ink60`; keep `ink40` for icons, dividers and
+disabled states. Add an a11y-suite assertion that no `alt` text uses `ink40`.
+
+**Why:** `ink40` (#9B9BA1) measures 2.6:1 on the light background — below the
+4.5:1 floor for text under 18pt. D9 fixes only the surfaces added on
+2026-08-31; the same token sits under most secondary text in the app.
+
+**Pros:** Light mode passes AA for body-size text everywhere. **Cons:** ~40
+sites across a dozen screens; the app reads slightly louder; needs a
+both-modes screenshot sweep.
+
+**Context:** `grep -rn "ink40" src` is the worklist; today's Maestro flows
+provide the before/after captures.
+
+**Effort:** S · **Priority:** P2 · **Depends on:** D9 (rule documented in
+`src/theme/theme.ts`)
+
+### Support iOS large text (Dynamic Type) in fixed-height layouts (design review 2026-08-31)
+
+**What:** Audit at iOS accessibility text sizes; replace fixed heights with
+min-heights (48pt icon buttons, 56pt CTA, 44pt hero actions, 64pt week cells,
+single-line habit names, picker tiles) and set `maxFontSizeMultiplier` only
+where wrapping would destroy meaning.
+
+**Why:** Labels and roles are done; usable-with-accessibility-settings is not.
+At AX3+ names truncate, the hero sub-line wraps under the ring, picker tiles
+overflow.
+
+**Pros:** Honest a11y story; catches layout assumptions before more screens
+are built. **Cons:** Touches a dozen layouts; needs a screenshot matrix at
+2–3 sizes.
+
+**Context:** Capture at other sizes with
+`xcrun simctl ui <udid> content_size extra-extra-extra-large` before running
+the Maestro flows; today's captures are the default-size baseline.
+
+**Effort:** M · **Priority:** P3 · **Depends on:** nothing
+
 ## Store
 
 ### Prune `completions` entries older than the 83-day history window (eng review 2026-08-31)

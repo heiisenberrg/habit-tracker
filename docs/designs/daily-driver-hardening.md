@@ -242,10 +242,10 @@ chat line logs a habit, and the streak survives a sick day. Everything else
 | CEO Review | `/plan-ceo-review` | Scope & strategy | 1 | CLEAN | 5 proposals, 4 accepted, 1 deferred |
 | Codex Review | `/codex review` | Independent 2nd opinion | 0 | — | — |
 | Eng Review | `/plan-eng-review` | Architecture & tests (required) | 2 | CLEAN | 2026-08-31 (post-QA diff): 32 issues, 0 critical gaps · 2026-08-30 (plan): 20 issues, 0 critical gaps |
-| Design Review | `/plan-design-review` | UI/UX gaps | 0 | — | — |
+| Design Review | `/plan-design-review` | UI/UX gaps | 1 | CLEAN | score: 6/10 → 8/10, 11 decisions (tasks D1–D10) |
 | DX Review | `/plan-devex-review` | Developer experience gaps | 0 | — | — |
 
-- **CROSS-MODEL:** three Claude outside voices (fresh-context) have run — CEO-stage (13), eng-stage on the plan (16), and eng-stage on the 2026-08-31 simulator-QA fix diff (10 findings: 2 agreed with the review, 6 tensions decided by the user — 5 accepted, 1 kept as reviewed — plus 4 hygiene corrections accepted). Zero auto-incorporated.
-- **VERDICT:** CEO + ENG CLEARED — implement tasks T1–T14 (`~/.gstack/projects/habittracker/tasks-eng-review-20260831-094912.jsonl`), then re-run the five Maestro flows green before committing.
+- **CROSS-MODEL:** four Claude outside voices (fresh-context) have run — CEO-stage (13), eng-stage on the plan (16), eng-stage on the QA-fix diff (10), and a design subagent on the four new surfaces (8, single-model; Codex not installed). Zero auto-incorporated; every accepted item went through a user decision.
+- **VERDICT:** CEO + ENG + DESIGN CLEARED — implement design tasks D1–D10 (`~/.gstack/projects/habittracker/tasks-design-review-*.jsonl`), re-run the Maestro flows (with switch-state assertions), then `/design-review` on the rebuilt screens.
 
 NO UNRESOLVED DECISIONS
