@@ -98,6 +98,14 @@ appId: com.lucidbots.lucidbots
 - assertNotVisible: ".*NaN.*"
 
 # --- trip detail: month-boundary date shifts, then delete ---
+# The hub is long by now (expiring soon + a full list), so Recent shops sits
+# below the fold and tapOn does not scroll.
+- scrollUntilVisible:
+    element:
+      text: ".*Esselunga.*"
+    direction: DOWN
+    centerElement: true
+    timeout: 20000
 - tapOn: ".*Esselunga.*"
 - extendedWaitUntil:
     visible: ".*Items.*"
@@ -125,11 +133,22 @@ appId: com.lucidbots.lucidbots
 - tapOn: "Add a store"
 - inputText: "Lidl"
 - tapOn: "Add store"
+# Two rows are called Lidl now (the duplicate added above), and archiving one
+# turns its button into "Restore Lidl" — so tap Archive Lidl twice to empty
+# the picker completely.
+- tapOn: "Archive Lidl"
 - tapOn: "Archive Lidl"
 - tapOn: "Archive Esselunga"
 - tapOn: "Archive Conad"
 - takeScreenshot: c6-stores-archived
 - tapOn: "Back"
+# The hub keeps its scroll position from the trip-detail detour.
+- scrollUntilVisible:
+    element:
+      text: "Start a shop"
+    direction: UP
+    centerElement: true
+    timeout: 20000
 - tapOn: "Start a shop"
 - assertVisible: ".*No stores yet.*"
 - takeScreenshot: c7-empty-picker
