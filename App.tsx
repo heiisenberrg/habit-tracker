@@ -17,6 +17,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import RootNavigator from './src/navigation/RootNavigator';
 import { applyAppLock } from './src/services/appLock';
 import { mirrorBackup } from './src/services/backup';
+import { resyncDateReminders } from './src/services/dateReminders';
 import {
   registerForegroundHandler,
   resyncReminders,
@@ -89,6 +90,17 @@ function App() {
       resyncReminders(habits);
     }
   }, [habits]);
+
+  // Remembered dates: one-shot triggers for each entry's next occurrence,
+  // re-armed after hydration and whenever the list changes. Never prompts —
+  // the Remember dates screen owns the permission ask. Gated on hydration so
+  // the pre-hydration empty list can't race the real one.
+  const dates = useStore(s => s.dates);
+  useEffect(() => {
+    if (useStore.persist.hasHydrated()) {
+      resyncDateReminders(dates);
+    }
+  }, [dates]);
 
   // Foreground notification action presses (previously dropped — OV #10).
   useEffect(() => registerForegroundHandler(), []);

@@ -74,6 +74,15 @@ const GENERAL: Row[] = [
   },
 ];
 
+/** Remembered dates are nudges too: a yearly one instead of a daily one. */
+const DATES_ROW: Row = {
+  key: 'dates',
+  label: 'Remember dates',
+  icon: '🎂',
+  type: 'link',
+  subtitle: 'Birthdays, anniversaries, deadlines — a nudge every year',
+};
+
 /** The inbox row lives with the nudges it collects (design review 2A). */
 const INBOX_ROW: Row = {
   key: 'notifications',
@@ -378,6 +387,8 @@ function SettingsScreen() {
   const onRowPress = (key: string) => {
     if (key === 'notifications') {
       navigation.navigate('Notifications');
+    } else if (key === 'dates') {
+      navigation.navigate('RememberDates');
     } else if (key === 'share') {
       Share.share({
         message:
@@ -610,6 +621,7 @@ function SettingsScreen() {
             onOpenSettings={openIosSettings}
             testID="switch-weather"
           />
+          {renderRow(DATES_ROW, false)}
           {renderRow(INBOX_ROW, true)}
         </View>
         <AppText variant="chip" color={colors.ink40}>

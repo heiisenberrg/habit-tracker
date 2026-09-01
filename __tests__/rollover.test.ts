@@ -152,8 +152,9 @@ describe('migrateStore', () => {
       planner: [{ id: 't1', title: 'user item that happens to be t1' }],
     };
     const out = migrateStore(v4, 4) as Record<string, unknown>;
-    const { grocery, ...rest } = out;
+    const { grocery, dates, ...rest } = out;
     expect(rest).toEqual(v4);
+    expect(dates).toEqual([]);
     expect(grocery).toEqual({
       stores: [
         { id: 'store-lidl', name: 'Lidl' },
@@ -165,7 +166,7 @@ describe('migrateStore', () => {
     });
   });
 
-  test('v5 passthrough is untouched', () => {
+  test('v5 gains only the dates list; everything else passes through', () => {
     const v5 = {
       streak: { current: 9, best: 12 },
       historyReconciled: true,
@@ -173,7 +174,19 @@ describe('migrateStore', () => {
       planner: [{ id: 't1', title: 'user item that happens to be t1' }],
       grocery: { stores: [{ id: 's1', name: 'Mine' }], list: [], trips: [] },
     };
-    expect(migrateStore(v5, 5)).toEqual(v5);
+    expect(migrateStore(v5, 5)).toEqual({ ...v5, dates: [] });
+  });
+
+  test('v6 passthrough is untouched', () => {
+    const v6 = {
+      streak: { current: 9, best: 12 },
+      historyReconciled: true,
+      prefs: { sounds: true, vacationMode: false, recap: false, weather: true },
+      planner: [{ id: 't1', title: 'user item that happens to be t1' }],
+      grocery: { stores: [{ id: 's1', name: 'Mine' }], list: [], trips: [] },
+      dates: [{ id: 'date-1', title: 'Ajay’s birthday', day: 25, month: 6 }],
+    };
+    expect(migrateStore(v6, 6)).toEqual(v6);
   });
 
   test('never returns initial() — user fields survive any version', () => {

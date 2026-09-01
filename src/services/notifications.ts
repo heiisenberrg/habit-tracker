@@ -313,6 +313,19 @@ export const scheduleOneOffNotification = async (
   }
 };
 
+/** Ids of every pending trigger notification; empty when unavailable. */
+export const listTriggerNotificationIds = async (): Promise<string[]> => {
+  if (!notificationsAvailable()) {
+    return [];
+  }
+  try {
+    const ids = await notifee.getTriggerNotificationIds();
+    return Array.isArray(ids) ? ids : [];
+  } catch {
+    return [];
+  }
+};
+
 /** Cancel any notification (pending or delivered) by its id. */
 export const cancelNotificationById = async (id: string): Promise<void> => {
   if (!notificationsAvailable()) {

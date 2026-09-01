@@ -1,0 +1,60 @@
+# Remember dates: add a birthday from Settings, see it in the list.
+appId: com.lucidbots.lucidbots
+---
+- launchApp
+- runFlow:
+    when:
+      visible: "Continue"
+    commands:
+      - tapOn: "Continue"
+- extendedWaitUntil:
+    visible: "Hi, Aj.*"
+    timeout: 45000
+- tapOn: "Profile"
+- tapOn: "Settings"
+# Link rows merge label + subtitle into one element.
+- extendedWaitUntil:
+    visible: ".*Remember dates.*"
+    timeout: 15000
+- tapOn: ".*Remember dates.*"
+- extendedWaitUntil:
+    visible: "Add a date"
+    timeout: 15000
+- takeScreenshot: d1-empty
+- tapOn: "Add a date"
+- tapOn:
+    id: "date-title"
+- inputText: "Ajay's birthday"
+- tapOn:
+    id: "date-day"
+- inputText: "25"
+- tapOn:
+    id: "date-year"
+- inputText: "1996"
+# hideKeyboard is unreliable on iOS; picking a chip dismisses the number pad.
+- tapOn: "June"
+- scrollUntilVisible:
+    element:
+      text: "1 day before"
+    direction: DOWN
+    centerElement: true
+- tapOn: "1 day before"
+- takeScreenshot: d2-form
+- scrollUntilVisible:
+    element:
+      text: "Save date"
+    direction: DOWN
+    centerElement: true
+- tapOn: "Save date"
+# The first reminder raises the iOS notification prompt (a user-initiated ask,
+# like a habit reminder); absent once permission has been decided.
+- tapOn:
+    text: "Allow"
+    optional: true
+# The row merges title, date, countdown and reminder into one element.
+- extendedWaitUntil:
+    visible: ".*Ajay's birthday.*25 June 1996.*"
+    timeout: 15000
+- assertVisible: ".*1 day before.*09:00.*every year.*"
+- takeScreenshot: d3-list
+- tapOn: "Back"

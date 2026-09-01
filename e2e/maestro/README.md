@@ -24,5 +24,10 @@ prompt left up by an earlier session cannot poison the run.
   per-store split on Insights. Run it after `00-new-user`, and AFTER
   `10-home-flows`: whichever flow launches first on a given day gets the
   quote-of-the-day screen, and only `10-home-flows` asserts it.
+- `50-dates` — Remember dates: Settings → Remember dates, add "Ajay's
+  birthday" (25 June 1996, 1 day before), and check the row shows the date,
+  the age and the reminder. The notification prompt may appear on Save (a
+  user-initiated ask, like a habit reminder). Same ordering rule as
+  `40-grocery`.
 
 Screenshots land in `e2e/maestro/shots/out/<timestamp>/` (gitignored).

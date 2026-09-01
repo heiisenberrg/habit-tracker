@@ -22,6 +22,7 @@ import SplashScreen from '../screens/SplashScreen';
 import GroceryInsightsScreen from '../screens/GroceryInsightsScreen';
 import GroceryScreen from '../screens/GroceryScreen';
 import QuoteOfDayScreen from '../screens/QuoteOfDayScreen';
+import RememberDatesScreen from '../screens/RememberDatesScreen';
 import ShopTripScreen from '../screens/ShopTripScreen';
 import StoresScreen from '../screens/StoresScreen';
 import TripDetailScreen from '../screens/TripDetailScreen';
@@ -46,6 +47,7 @@ export type RootStackParamList = {
   Success: { title?: string } | undefined;
   Settings: undefined;
   Notifications: undefined;
+  RememberDates: undefined;
   Calendar: undefined;
   HabitDetail: { id: string };
 };
@@ -116,6 +118,7 @@ function RootNavigator() {
         />
         <Stack.Screen name="Settings" component={SettingsScreen} />
         <Stack.Screen name="Notifications" component={NotificationsScreen} />
+        <Stack.Screen name="RememberDates" component={RememberDatesScreen} />
         <Stack.Screen name="Calendar" component={CalendarScreen} />
         <Stack.Screen name="ShopTrip" component={ShopTripScreen} />
         <Stack.Screen name="TripDetail" component={TripDetailScreen} />

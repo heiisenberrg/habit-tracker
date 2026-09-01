@@ -8,6 +8,7 @@ import BackgroundFetch from 'react-native-background-fetch';
 import App from './App';
 import { name as appName } from './app.json';
 import { runBackgroundAppLockCheck } from './src/services/appLock';
+import { runBackgroundDatesCheck } from './src/services/dateReminders';
 import { registerBackgroundHandler } from './src/services/notifications';
 import { runBackgroundRainCheck } from './src/services/rainAlerts';
 import { runBackgroundRecapCheck } from './src/services/recap';
@@ -28,6 +29,7 @@ BackgroundFetch.configure(
     await runBackgroundRainCheck();
     await runBackgroundAppLockCheck();
     await runBackgroundRecapCheck();
+    await runBackgroundDatesCheck();
     BackgroundFetch.finish(taskId);
   },
   taskId => BackgroundFetch.finish(taskId),
@@ -44,6 +46,7 @@ BackgroundFetch.registerHeadlessTask(async event => {
   await runBackgroundRainCheck();
   await runBackgroundAppLockCheck();
   await runBackgroundRecapCheck();
+  await runBackgroundDatesCheck();
   BackgroundFetch.finish(event.taskId);
 });
 

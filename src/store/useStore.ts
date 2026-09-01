@@ -9,6 +9,7 @@ import {
   Unit,
   emptyGrocery,
 } from '../data/grocery';
+import { RememberedDate } from '../data/dates';
 import type { DailyQuote } from '../data/quotes';
 import { Challenge, Habit, PlannerItem, seedChallenges } from '../data/seed';
 
@@ -141,6 +142,16 @@ type State = {
   ) => void;
   closeTrip: (tripId: string) => void;
   deleteTrip: (tripId: string) => void;
+  /** Remember dates: birthdays, anniversaries, deadlines — yearly or one-off reminders. */
+  dates: RememberedDate[];
+  /** Returns the new id, or '' when the title is blank (nothing stored). */
+  addDate: (
+    input: Omit<RememberedDate, 'id' | 'createdAt' | 'enabled'> & {
+      enabled?: boolean;
+    },
+  ) => string;
+  updateDate: (id: string, patch: Partial<Omit<RememberedDate, 'id'>>) => void;
+  removeDate: (id: string) => void;
 
   /** device integrations (personal app) */
   healthConnected: boolean;
@@ -272,6 +283,7 @@ const initial = () => ({
   quoteShownOn: null as string | null,
   dailyQuote: null as DailyQuote | null,
   grocery: emptyGrocery(),
+  dates: [] as RememberedDate[],
   healthConnected: false,
   calendarConnected: false,
   darkMode: false,
@@ -287,7 +299,7 @@ export const CORRUPT_DUMP_KEY = 'routiner-corrupt-dump';
 /** Disambiguates planner ids minted within the same millisecond. */
 let plannerSeq = 0;
 
-/** Same idea for grocery stores, list lines, trips and trip items. */
+/** Same idea for grocery stores, list lines, trips, trip items and dates. */
 let grocerySeq = 0;
 const gid = (prefix: string) => `${prefix}${Date.now()}-${grocerySeq++}`;
 
@@ -311,6 +323,7 @@ export const DATA_KEYS = [
   'darkMode',
   'wellbeing',
   'grocery',
+  'dates',
   'challengeJoinedOn',
   'inbox',
   'prefs',
@@ -408,6 +421,10 @@ export const migrateStore = (persisted: unknown, version: number) => {
     // v5: the Grocery tab. Existing installs get the seeded store registry
     // and empty list/trips; nothing else in the store is touched.
     s = { ...s, grocery: s.grocery ?? emptyGrocery() };
+  }
+  if (version < 6) {
+    // v6: Remember dates. Existing installs start with an empty list.
+    s = { ...s, dates: Array.isArray(s.dates) ? s.dates : [] };
   }
   return s;
 };
@@ -894,11 +911,44 @@ export const useStore = create<State>()(
           },
         })),
 
+      addDate: input => {
+        const title = input.title.trim();
+        if (!title) {
+          return '';
+        }
+        const id = gid('date-');
+        set(s => ({
+          dates: [
+            ...s.dates,
+            {
+              ...input,
+              id,
+              title,
+              enabled: input.enabled ?? true,
+              createdAt: new Date().toISOString(),
+            },
+          ],
+        }));
+        return id;
+      },
+      updateDate: (id, patch) =>
+        set(s => ({
+          dates: s.dates.map(d => {
+            if (d.id !== id) {
+              return d;
+            }
+            const title = patch.title?.trim();
+            return { ...d, ...patch, title: title || d.title };
+          }),
+        })),
+      removeDate: id =>
+        set(s => ({ dates: s.dates.filter(d => d.id !== id) })),
+
       reset: () => set(initial()),
     }),
     {
       name: 'routiner-store',
-      version: 5,
+      version: 6,
       storage: routinerStorage,
       migrate: migrateStore as (p: unknown, v: number) => State,
     },
