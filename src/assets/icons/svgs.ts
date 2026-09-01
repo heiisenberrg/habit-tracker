@@ -100,3 +100,11 @@ export const assistantMark = `<svg preserveAspectRatio="none" overflow="visible"
 <circle cx="12" cy="12" r="10" stroke="#040415" stroke-width="1.8"/>
 <path d="M12 17.2C11.7 17.2 11.4 17.1 11.2 16.9L7.6 13.4C6.3 12.1 6.3 10 7.6 8.7C8.8 7.5 10.7 7.5 11.9 8.6L12 8.7L12.1 8.6C13.3 7.5 15.2 7.5 16.4 8.7C17.7 10 17.7 12.1 16.4 13.4L12.8 16.9C12.6 17.1 12.3 17.2 12 17.2Z" fill="#040415"/>
 </svg>`;
+
+export const basketPri = `<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="20" height="13" viewBox="0 0 20 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M1.2 0H18.8C19.4 0 19.85 0.55 19.73 1.14L18.1 9.9C17.83 11.36 16.55 12.42 15.06 12.42H4.94C3.45 12.42 2.17 11.36 1.9 9.9L0.27 1.14C0.15 0.55 0.6 0 1.2 0ZM6.6 4.2C6.16 4.2 5.8 4.56 5.8 5V8.2C5.8 8.64 6.16 9 6.6 9C7.04 9 7.4 8.64 7.4 8.2V5C7.4 4.56 7.04 4.2 6.6 4.2ZM10 4.2C9.56 4.2 9.2 4.56 9.2 5V8.2C9.2 8.64 9.56 9 10 9C10.44 9 10.8 8.64 10.8 8.2V5C10.8 4.56 10.44 4.2 10 4.2ZM13.4 4.2C12.96 4.2 12.6 4.56 12.6 5V8.2C12.6 8.64 12.96 9 13.4 9C13.84 9 14.2 8.64 14.2 8.2V5C14.2 4.56 13.84 4.2 13.4 4.2Z" fill="#3843FF"/>
+</svg>`;
+
+export const basketSec = `<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="12" height="6" viewBox="0 0 12 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M0.72 5.06C0.36 4.8 0.28 4.3 0.54 3.94L2.9 0.66C3.38 0 4.16 -0.2 4.84 0.16L6 0.78L7.16 0.16C7.84 -0.2 8.62 0 9.1 0.66L11.46 3.94C11.72 4.3 11.64 4.8 11.28 5.06C10.92 5.32 10.42 5.24 10.16 4.88L7.86 1.68L6.38 2.46C6.14 2.58 5.86 2.58 5.62 2.46L4.14 1.68L1.84 4.88C1.58 5.24 1.08 5.32 0.72 5.06Z" fill="#EAECF0"/>
+</svg>`;

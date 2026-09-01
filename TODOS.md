@@ -83,6 +83,25 @@ refusal is unlikely).
 **Priority:** P3
 **Depends on:** Shield extension + 1A payload (in the 2026-08-30 plan)
 
+## Grocery
+
+### Grocery v2 candidates (design doc open questions, 2026-09-01)
+
+**What:** Per-item price history ("milk was €1.15 last time"), categories or
+aisles on the list, recurring staples that repopulate weekly, a receipt photo
+on a trip, expiry notifications, and a monthly budget target with a ring.
+
+**Why:** Each one came up while designing the Grocery tab and was cut from v1
+to keep the first version to list -> shop -> metrics. They only make sense once
+there are a few months of real trips to look at.
+
+**Context:** Design doc `docs/designs/grocery-tab.md` (premise 6 explicitly
+keeps expiry passive). The data model already carries `expiresOn` per item and
+`manualTotal` per trip, so none of these need a migration beyond their own
+fields. Selectors live in `src/services/grocery.ts`.
+
+**Effort:** M · **Priority:** P4 · **Depends on:** a month of real usage
+
 ## Design
 
 ### Write the design system down — DESIGN.md via /design-consultation (design review 2026-08-31)

@@ -113,6 +113,12 @@ export const PlusCircleIcon = makeIcon(48, [
 export const DotIcon = makeIcon(8, [{ xml: svg.dot, l: 0, t: 0, w: 8, h: 8 }]);
 
 /** The Routiner mark as a quiet monochrome glyph (Home header → Assistant). */
+/** Shopping basket — the Grocery tab. Handle above, basket below. */
+export const BasketIcon = makeIcon(24, [
+  { xml: svg.basketSec, l: 6, t: 2.5, w: 12, h: 6 },
+  { xml: svg.basketPri, l: 2, t: 8, w: 20, h: 13 },
+]);
+
 export const AssistantIcon = makeIcon(24, [
   { xml: svg.assistantMark, l: 0, t: 0, w: 24, h: 24 },
 ]);

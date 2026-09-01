@@ -205,3 +205,46 @@ export const monthsWithTrips = (trips: Trip[]): string[] =>
   [...new Set(trips.map(t => monthKeyOf(t.date)))].sort((a, b) =>
     a < b ? 1 : -1,
   );
+
+/** "Mon 14 Sep" — dates are day keys, so build the Date locally, not from ISO. */
+export const formatDayLabel = (dateKey: string): string => {
+  const [y, m, d] = dateKey.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString('en-US', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  });
+};
+
+/** "expired yesterday" / "today" / "in 3 days" — plain words beat a date here. */
+export const expiryLabel = (daysLeft: number): string => {
+  if (daysLeft < -1) {
+    return `expired ${Math.abs(daysLeft)} days ago`;
+  }
+  if (daysLeft === -1) {
+    return 'expired yesterday';
+  }
+  if (daysLeft === 0) {
+    return 'expires today';
+  }
+  if (daysLeft === 1) {
+    return 'expires tomorrow';
+  }
+  return `expires in ${daysLeft} days`;
+};
+
+/** "€60 less than August" — the sentence the month card wants to say. */
+export const deltaSentence = (
+  delta: { deltaAbs: number; previous: number },
+  monthKey: string,
+): string => {
+  const prevLabel = monthLabel(shiftMonthKey(monthKey, -1)).split(' ')[0];
+  if (delta.previous === 0) {
+    return `Nothing spent in ${prevLabel}`;
+  }
+  if (delta.deltaAbs === 0) {
+    return `Exactly the same as ${prevLabel}`;
+  }
+  const word = delta.deltaAbs < 0 ? 'less' : 'more';
+  return `${formatEur(Math.abs(delta.deltaAbs))} ${word} than ${prevLabel}`;
+};

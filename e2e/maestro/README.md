@@ -19,5 +19,10 @@ prompt left up by an earlier session cannot poison the run.
   appears here, in context) and logs it to completion.
 - `30-monkey` — 160 seeded random taps/swipes; the runner reports app-process
   liveness and any new crash reports afterwards.
+- `40-grocery` — Grocery tab: add two list lines, run a shop at Lidl with a
+  price and an expiry, finish it, then check the month summary and the
+  per-store split on Insights. Run it after `00-new-user`, and AFTER
+  `10-home-flows`: whichever flow launches first on a given day gets the
+  quote-of-the-day screen, and only `10-home-flows` asserts it.
 
 Screenshots land in `e2e/maestro/shots/out/<timestamp>/` (gitignored).

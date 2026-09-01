@@ -19,7 +19,12 @@ import ProfileScreen from '../screens/ProfileScreen';
 import QuickActionsScreen from '../screens/QuickActionsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import SplashScreen from '../screens/SplashScreen';
+import GroceryInsightsScreen from '../screens/GroceryInsightsScreen';
+import GroceryScreen from '../screens/GroceryScreen';
 import QuoteOfDayScreen from '../screens/QuoteOfDayScreen';
+import ShopTripScreen from '../screens/ShopTripScreen';
+import StoresScreen from '../screens/StoresScreen';
+import TripDetailScreen from '../screens/TripDetailScreen';
 import SuccessScreen from '../screens/SuccessScreen';
 
 export type RootStackParamList = {
@@ -29,6 +34,10 @@ export type RootStackParamList = {
   CreateAccount: undefined;
   Main: undefined;
   QuoteOfDay: undefined;
+  ShopTrip: { tripId: string };
+  TripDetail: { tripId: string };
+  GroceryInsights: undefined;
+  Stores: undefined;
   QuickActions: undefined;
   NewGoodHabit: undefined;
   Assistant: { flow?: 'habit' | 'task' | 'reminder' | 'quick' } | undefined;
@@ -57,6 +66,7 @@ function MainTabs() {
       screenOptions={{ headerShown: false }}
     >
       <Tabs.Screen name="Home" component={HomeScreen} />
+      <Tabs.Screen name="Grocery" component={GroceryScreen} />
       <Tabs.Screen name="Activity" component={ActivityScreen} />
       <Tabs.Screen name="Profile" component={ProfileScreen} />
     </Tabs.Navigator>
@@ -107,6 +117,13 @@ function RootNavigator() {
         <Stack.Screen name="Settings" component={SettingsScreen} />
         <Stack.Screen name="Notifications" component={NotificationsScreen} />
         <Stack.Screen name="Calendar" component={CalendarScreen} />
+        <Stack.Screen name="ShopTrip" component={ShopTripScreen} />
+        <Stack.Screen name="TripDetail" component={TripDetailScreen} />
+        <Stack.Screen
+          name="GroceryInsights"
+          component={GroceryInsightsScreen}
+        />
+        <Stack.Screen name="Stores" component={StoresScreen} />
         <Stack.Screen
           name="HabitDetail"
           component={HabitDetailScreen}

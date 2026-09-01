@@ -3,15 +3,16 @@ import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, radius, spacing } from '../theme/theme';
-import { HomeIcon, MedalIcon, ProfileIcon } from './icons';
+import { BasketIcon, HomeIcon, MedalIcon, ProfileIcon } from './icons';
 
 const ICONS: Record<string, React.ComponentType<{ size?: number }>> = {
   Home: HomeIcon,
+  Grocery: BasketIcon,
   Activity: MedalIcon,
   Profile: ProfileIcon,
 };
 
-/** Floating pill tab bar (Home · Activity · Profile), per Routiner "App Bar". */
+/** Floating pill tab bar (Home · Grocery · Activity · Profile). */
 function TabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
 

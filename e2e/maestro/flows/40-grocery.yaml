@@ -1,0 +1,60 @@
+# Grocery tab: write a list, run a shop at Lidl, see the month total.
+appId: com.lucidbots.lucidbots
+---
+- launchApp
+# Home's header quote link is also labelled "Quote of the day …", so key the
+# condition on the interstitial's own button instead.
+- runFlow:
+    when:
+      visible: "Continue"
+    commands:
+      - tapOn: "Continue"
+- extendedWaitUntil:
+    visible: "Hi, Aj.*"
+    timeout: 45000
+- tapOn: "Grocery"
+- extendedWaitUntil:
+    visible: ".*Shopping list.*"
+    timeout: 15000
+- takeScreenshot: g1-empty
+- tapOn: "Add something to buy"
+- inputText: "Milk"
+- tapOn: "Add to list"
+- tapOn: "Add something to buy"
+- inputText: "Onion"
+- tapOn: "Add to list"
+- assertVisible: "Milk"
+- assertVisible: "Onion"
+- takeScreenshot: g2-list
+- tapOn: "Start a shop"
+- tapOn: "Lidl"
+- extendedWaitUntil:
+    visible: ".*In the basket.*"
+    timeout: 15000
+# iOS merges the children of an accessible card into one element, so the
+# to-buy row reads "Milk Add price" — match on a substring.
+- tapOn: ".*Milk.*Add price.*"
+- tapOn:
+    id: "draft-price"
+- inputText: "1.15"
+- tapOn: "Expires in 3 days"
+- tapOn: "Add to basket"
+- assertVisible: ".*1.15.*"
+- takeScreenshot: g3-shop
+- tapOn: "Finish shopping"
+- extendedWaitUntil:
+    visible: ".*Recent shops.*"
+    timeout: 15000
+- assertVisible: ".*1 shop.*"
+- assertVisible: ".*Expiring soon.*"
+- assertVisible: ".*expires in 3 days.*"
+- takeScreenshot: g4-hub-after
+# The month card is one element labelled "<month>: <total> across N shops".
+- tapOn: ".*across 1 shops.*"
+- extendedWaitUntil:
+    visible: ".*Where you shopped.*"
+    timeout: 15000
+# The store row is one element: "Lidl: 1 shop, €1.15, 100 percent…".
+- assertVisible: ".*Lidl.*1 shop.*"
+- takeScreenshot: g5-insights
+- tapOn: "Back"

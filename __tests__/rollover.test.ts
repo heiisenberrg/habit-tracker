@@ -144,14 +144,36 @@ describe('migrateStore', () => {
     expect(out.streak).toEqual({ current: 9, best: 12 });
   });
 
-  test('v4 passthrough is untouched', () => {
+  test('v4 gains only the grocery slice; everything else passes through', () => {
     const v4 = {
       streak: { current: 9, best: 12 },
       historyReconciled: true,
       prefs: { sounds: true, vacationMode: false, recap: false, weather: true },
       planner: [{ id: 't1', title: 'user item that happens to be t1' }],
     };
-    expect(migrateStore(v4, 4)).toEqual(v4);
+    const out = migrateStore(v4, 4) as Record<string, unknown>;
+    const { grocery, ...rest } = out;
+    expect(rest).toEqual(v4);
+    expect(grocery).toEqual({
+      stores: [
+        { id: 'store-lidl', name: 'Lidl' },
+        { id: 'store-esselunga', name: 'Esselunga' },
+        { id: 'store-conad', name: 'Conad' },
+      ],
+      list: [],
+      trips: [],
+    });
+  });
+
+  test('v5 passthrough is untouched', () => {
+    const v5 = {
+      streak: { current: 9, best: 12 },
+      historyReconciled: true,
+      prefs: { sounds: true, vacationMode: false, recap: false, weather: true },
+      planner: [{ id: 't1', title: 'user item that happens to be t1' }],
+      grocery: { stores: [{ id: 's1', name: 'Mine' }], list: [], trips: [] },
+    };
+    expect(migrateStore(v5, 5)).toEqual(v5);
   });
 
   test('never returns initial() — user fields survive any version', () => {

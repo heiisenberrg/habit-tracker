@@ -2,7 +2,8 @@ appId: com.lucidbots.lucidbots
 ---
 
 - launchApp
-- assertNotVisible: ".*Quote of the day.*"
+# Unique to the interstitial: Home's header link says "…Opens ZenQuotes".
+- assertNotVisible: ".*Quotes by ZenQuotes.*"
 - tapOn: "Profile"
 - tapOn: "Settings"
 - extendedWaitUntil:

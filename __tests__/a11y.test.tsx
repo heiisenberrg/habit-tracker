@@ -11,8 +11,10 @@ import ReactTestRenderer, { ReactTestInstance } from 'react-test-renderer';
 import HabitCard from '../src/components/HabitCard';
 import { Card, IconButton } from '../src/components/common';
 import TasksSection from '../src/components/home/TasksSection';
+import GroceryScreen from '../src/screens/GroceryScreen';
 import SettingsScreen from '../src/screens/SettingsScreen';
 import { Habit } from '../src/data/seed';
+import { useStore } from '../src/store/useStore';
 
 jest.mock('@react-navigation/native', () => {
   const ReactActual = jest.requireActual('react');
@@ -177,6 +179,62 @@ describe('SettingsScreen', () => {
     ]) {
       expect(labels).toContain(name);
     }
+    await ReactTestRenderer.act(() => {
+      r.unmount();
+    });
+  });
+});
+
+describe('GroceryScreen', () => {
+  beforeEach(() => {
+    useStore.getState().reset();
+  });
+
+  test('empty state names its controls and offers a way to start', async () => {
+    const r = await render(
+      <SafeAreaProvider initialMetrics={METRICS}>
+        <GroceryScreen />
+      </SafeAreaProvider>,
+    );
+    const labels = labelsOf(r.root);
+    expect(labels).toEqual(
+      expect.arrayContaining([
+        'Manage stores',
+        'Add something to buy',
+        'Add to list',
+      ]),
+    );
+    await ReactTestRenderer.act(() => {
+      r.unmount();
+    });
+  });
+
+  test('a list line is a labelled checkbox with a named remove button', async () => {
+    useStore.getState().addListItem({ name: 'Milk', note: 'skimmed' });
+    const r = await render(
+      <SafeAreaProvider initialMetrics={METRICS}>
+        <GroceryScreen />
+      </SafeAreaProvider>,
+    );
+    const line = useStore.getState().grocery.list[0];
+    // A Pressable matches at several layers: the host carries the a11y props,
+    // the composite carries onPress.
+    const box = r.root.findAll(
+      n =>
+        n.props.accessibilityRole === 'checkbox' &&
+        n.props.accessibilityLabel === 'Milk',
+    );
+    const host = box.find(n => typeof n.type === 'string')!;
+    const pressable = box.find(n => typeof n.props.onPress === 'function')!;
+    expect(host.props.accessibilityState).toEqual({ checked: false });
+    expect(labelsOf(r.root)).toContain('Remove Milk');
+
+    // Ticking on the hub marks it bought without inventing a price.
+    await ReactTestRenderer.act(() => {
+      pressable.props.onPress();
+    });
+    expect(useStore.getState().grocery.list[0].done).toBe(true);
+    expect(line.id).toBe(useStore.getState().grocery.list[0].id);
     await ReactTestRenderer.act(() => {
       r.unmount();
     });
