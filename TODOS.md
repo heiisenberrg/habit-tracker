@@ -41,6 +41,28 @@ image asset — same blocker class as the widget avatar swap.
 
 ## Shield
 
+### Verify the Screen Time report on the device (2026-09-01)
+
+**What:** Run the RoutinerReport DeviceActivityReport extension on the iPhone
+and confirm Apple renders real pickups / social-app minutes in the sheet the
+Activity screen opens.
+
+**Why blocked:** Screen Time authorization cannot be granted on a simulator
+(`AuthorizationCenter` never approves there), so the report renders empty. The
+device path needs the same Apple ID re-auth that blocks the shield target and
+the device Release build.
+
+**Verified so far:** the extension compiles, embeds as `RoutinerReport.appex`,
+and the host module answers `supported: true` from the simulator — only the
+authorized path is unproven.
+
+**Note:** Apple sandboxes the extension so it cannot move data out of its
+address space, so the numbers can never reach JS. If the sheet feels too
+buried, the follow-up is embedding `DeviceActivityReport` inline via a Fabric
+component (the legacy view-manager interop is why it is a sheet today).
+
+**Effort:** S (after re-auth) · **Priority:** P2 · **Depends on:** Apple ID re-auth
+
 ### Activate the ShieldConfiguration extension (D8, auto-deferred 2026-08-30)
 
 **What:** Register the ready-made RoutinerShield extension target and ship the

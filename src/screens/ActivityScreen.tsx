@@ -15,6 +15,11 @@ import { Card, IconButton, SegmentControl } from '../components/common';
 import { MOOD_FACES } from '../data/seed';
 import { getLastNightSleep, SleepSummary } from '../services/health';
 import {
+  getScreenTimeState,
+  openScreenTimeReport,
+  ScreenTimeState,
+} from '../services/screenTime';
+import {
   addDays,
   dayCompletion,
   dayStreak,
@@ -79,12 +84,22 @@ function ActivityScreen() {
   const [offset, setOffset] = useState(0);
   const [expanded, setExpanded] = useState(true);
   const [sleep, setSleep] = useState<SleepSummary | null>(null);
+  const [screenTime, setScreenTime] = useState<ScreenTimeState>({
+    supported: false,
+    authorized: false,
+  });
 
   useEffect(() => {
     if (healthConnected) {
       getLastNightSleep().then(setSleep);
     }
   }, [healthConnected]);
+
+  // Screen Time is its own permission, unrelated to Apple Health — asking for
+  // it inside the health branch meant it never ran on a fresh install.
+  useEffect(() => {
+    getScreenTimeState().then(setScreenTime);
+  }, []);
 
   const changeSeg = (i: number) => {
     setSeg(i);
@@ -311,36 +326,25 @@ function ActivityScreen() {
   const fmtMin = (m: number) => `${Math.floor(m / 60)}h ${m % 60}m`;
 
   const perfect = perfectToday(store);
+  /**
+   * Only signals Routiner can verify: a perfect day and Apple Health sleep.
+   * Pickups and social minutes are drawn by Apple's Screen Time extension and
+   * cannot be read by this app, so scoring them would mean scoring a number
+   * the user typed in by hand.
+   */
   const productivity = Math.min(
     100,
-    (perfect ? 40 : 0) +
+    (perfect ? 50 : 0) +
       (sleepMinutes != null
         ? sleepMinutes >= 420
-          ? 20
+          ? 50
           : sleepMinutes >= 360
-          ? 10
-          : 0
-        : 0) +
-      (wb.pickups != null
-        ? wb.pickups <= 50
-          ? 20
-          : wb.pickups <= 80
-          ? 10
-          : 0
-        : 0) +
-      (wb.socialMin != null
-        ? wb.socialMin <= 60
-          ? 20
-          : wb.socialMin <= 120
-          ? 10
+          ? 25
           : 0
         : 0),
   );
 
-  const bumpWellbeing = (
-    key: 'pickups' | 'socialMin' | 'sleepMinutes',
-    delta: number,
-  ) => {
+  const bumpWellbeing = (key: 'sleepMinutes', delta: number) => {
     const current = (wb[key] ?? 0) as number;
     setWellbeing(todayKey(), { [key]: Math.max(0, current + delta) });
   };
@@ -574,87 +578,34 @@ function ActivityScreen() {
             )}
           </View>
 
-          {/* Pickups */}
-          <View style={styles.wbRow}>
+          {/* Screen Time — pickups and social apps, rendered by Apple */}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={
+              screenTime.authorized
+                ? "Open today's Screen Time report"
+                : 'Screen Time report needs permission'
+            }
+            onPress={() => screenTime.authorized && openScreenTimeReport()}
+            style={styles.wbRow}
+          >
             <AppText variant="body">📵</AppText>
             <View style={styles.flex}>
-              <AppText variant="bodyMedium">
-                {wb.pickups != null ? `${wb.pickups} pickups` : 'Phone pickups'}
-              </AppText>
-              <AppText
-                variant="alt"
-                color={
-                  wb.pickups != null && wb.pickups <= 50
-                    ? colors.green
-                    : colors.ink40
-                }
-              >
-                Fewer is better · target ≤ 50 (from the Screen Time widget)
+              <AppText variant="bodyMedium">Pickups & social apps</AppText>
+              <AppText variant="alt" color={colors.ink60}>
+                {!screenTime.supported
+                  ? 'Needs iOS 16 or later'
+                  : screenTime.authorized
+                  ? "Today's numbers, straight from Screen Time"
+                  : 'Turn on Screen Time access in Settings → App Lock'}
               </AppText>
             </View>
-            <View style={styles.stepper}>
-              <Pressable
-                onPress={() => bumpWellbeing('pickups', -5)}
-                style={styles.stepBtn}
-              >
-                <AppText variant="bodyMedium" color={colors.ink60}>
-                  −
-                </AppText>
-              </Pressable>
-              <AppText variant="chip" color={colors.ink60}>
-                5
+            {screenTime.supported && screenTime.authorized && (
+              <AppText variant="bodyMedium" color={colors.blue}>
+                View
               </AppText>
-              <Pressable
-                onPress={() => bumpWellbeing('pickups', 5)}
-                style={styles.stepBtn}
-              >
-                <AppText variant="bodyMedium" color={colors.ink60}>
-                  +
-                </AppText>
-              </Pressable>
-            </View>
-          </View>
-
-          {/* Social media time */}
-          <View style={styles.wbRow}>
-            <AppText variant="body">📱</AppText>
-            <View style={styles.flex}>
-              <AppText variant="bodyMedium">
-                {wb.socialMin != null ? fmtMin(wb.socialMin) : 'Social media'}
-              </AppText>
-              <AppText
-                variant="alt"
-                color={
-                  wb.socialMin != null && wb.socialMin <= 60
-                    ? colors.green
-                    : colors.ink40
-                }
-              >
-                Keep under 1h · log from Screen Time
-              </AppText>
-            </View>
-            <View style={styles.stepper}>
-              <Pressable
-                onPress={() => bumpWellbeing('socialMin', -15)}
-                style={styles.stepBtn}
-              >
-                <AppText variant="bodyMedium" color={colors.ink60}>
-                  −
-                </AppText>
-              </Pressable>
-              <AppText variant="chip" color={colors.ink60}>
-                15m
-              </AppText>
-              <Pressable
-                onPress={() => bumpWellbeing('socialMin', 15)}
-                style={styles.stepBtn}
-              >
-                <AppText variant="bodyMedium" color={colors.ink60}>
-                  +
-                </AppText>
-              </Pressable>
-            </View>
-          </View>
+            )}
+          </Pressable>
         </Card>
 
         {/* Completion chart */}
