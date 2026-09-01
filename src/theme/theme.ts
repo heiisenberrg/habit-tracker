@@ -49,6 +49,21 @@ export const colors = {
   gradientEnd: '#0516FF',
 } as const;
 
+/**
+ * Chart steps: ONE hue, two steps (selected vs the rest) — the grocery charts
+ * show a single measure, so identity comes from labels, not from more hues.
+ * Dark mode gets its own steps rather than a flipped light ramp; each pair was
+ * checked with the dataviz validator against its own surface:
+ * light #3843FF/#7B82F5 and dark #5A63FF/#9AA0F0 both clear 3:1 contrast and
+ * a normal-vision separation of ΔE 17+ (brand blue itself is only 2.83:1 on
+ * the dark surface, which is why dark lifts to #5A63FF). Literal hex because
+ * these are picked per scheme at render time.
+ */
+export const chartSteps = {
+  light: { on: '#3843FF', off: '#7B82F5' },
+  dark: { on: '#5A63FF', off: '#9AA0F0' },
+} as const;
+
 export const gradients = {
   blue: [colors.gradientStart, colors.gradientEnd] as [string, string],
 };

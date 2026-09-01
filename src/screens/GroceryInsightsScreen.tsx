@@ -3,13 +3,16 @@ import React, { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppText from '../components/AppText';
-import { Card, IconButton } from '../components/common';
+import { Card, IconButton, SegmentControl } from '../components/common';
 import MonthSummary from '../components/grocery/MonthSummary';
+import SpendBars from '../components/grocery/SpendBars';
+import StoreBars from '../components/grocery/StoreBars';
 import {
   formatDayLabel,
   formatEur,
   monthKeyOf,
   monthLabel,
+  monthlySeries,
   shiftMonthKey,
   storeBreakdown,
   storeName,
@@ -27,10 +30,17 @@ function GroceryInsightsScreen() {
   const grocery = useStore(s => s.grocery);
   const [monthKey, setMonthKey] = useState(() => monthKeyOf(todayKey()));
 
-  const rows = storeBreakdown(grocery.trips, grocery.stores, monthKey);
+  /** 0 = the selected month, 1 = every shop ever logged. */
+  const [storeScope, setStoreScope] = useState(0);
+
+  const series = monthlySeries(grocery.trips, monthKey, 6);
+  const rows = storeBreakdown(
+    grocery.trips,
+    grocery.stores,
+    storeScope === 0 ? monthKey : null,
+  );
   const items = topItems(grocery.trips, monthKey, 5);
   const trips = tripsInMonth(grocery.trips, monthKey);
-  const maxTrips = Math.max(1, ...rows.map(r => r.trips));
   const thisMonth = monthKeyOf(todayKey());
 
   return (
@@ -82,46 +92,34 @@ function GroceryInsightsScreen() {
 
         <View style={styles.section}>
           <AppText variant="chip" color={colors.ink60}>
-            Where you shopped
+            Spend by month
           </AppText>
-          {rows.length === 0 && (
-            <AppText variant="body" color={colors.ink60}>
-              No shops logged in {monthLabel(monthKey)}.
-            </AppText>
-          )}
-          {rows.map(row => (
-            <Card key={row.storeId} accessible={false}>
-              <View
-                accessible
-                accessibilityRole="text"
-                accessibilityLabel={`${row.name}: ${row.trips} ${
-                  row.trips === 1 ? 'shop' : 'shops'
-                }, ${formatEur(row.spend)}, ${Math.round(
-                  row.share * 100,
-                )} percent of the month`}
-                style={styles.storeRow}
-              >
-                <View style={styles.rowTop}>
-                  <AppText variant="bodyMedium" style={styles.flex}>
-                    {row.name}
-                  </AppText>
-                  <AppText variant="bodyMedium">{formatEur(row.spend)}</AppText>
-                </View>
-                <View style={styles.track}>
-                  <View
-                    style={[
-                      styles.bar,
-                      { width: `${(row.trips / maxTrips) * 100}%` },
-                    ]}
-                  />
-                </View>
-                <AppText variant="alt" color={colors.ink60}>
-                  {row.trips} {row.trips === 1 ? 'shop' : 'shops'} ·{' '}
-                  {Math.round(row.share * 100)}% of the month
-                </AppText>
-              </View>
-            </Card>
-          ))}
+          <Card accessible={false}>
+            <SpendBars
+              series={series}
+              selected={monthKey}
+              onSelect={setMonthKey}
+            />
+          </Card>
+        </View>
+
+        <View style={styles.section}>
+          <AppText variant="chip" color={colors.ink60}>
+            Spend by shop
+          </AppText>
+          <SegmentControl
+            tabs={[monthLabel(monthKey).split(' ')[0], 'All time']}
+            active={storeScope}
+            onChange={setStoreScope}
+          />
+          <StoreBars
+            rows={rows}
+            emptyLabel={
+              storeScope === 0
+                ? `No shops logged in ${monthLabel(monthKey)}.`
+                : 'No shops logged yet.'
+            }
+          />
         </View>
 
         {items.length > 0 && (
@@ -189,15 +187,6 @@ const styles = StyleSheet.create({
   },
   body: { paddingHorizontal: screenPadding, gap: spacing.lg },
   section: { gap: spacing.sm },
-  storeRow: { gap: spacing.xs },
-  rowTop: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  track: {
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.ink10,
-    overflow: 'hidden',
-  },
-  bar: { height: 8, borderRadius: 4, backgroundColor: colors.blue },
   rowCard: {
     flexDirection: 'row',
     alignItems: 'center',

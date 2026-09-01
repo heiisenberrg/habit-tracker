@@ -1,0 +1,161 @@
+# Grocery tab, hostile inputs: junk prices, junk expiry dates, blank names,
+# archiving every store, date shifts across a month boundary, deleting a shop.
+appId: com.lucidbots.lucidbots
+---
+- launchApp
+- runFlow:
+    when:
+      visible: "Continue"
+    commands:
+      - tapOn: "Continue"
+- tapOn: "Grocery"
+- extendedWaitUntil:
+    visible: ".*Shopping list.*"
+    timeout: 30000
+
+# --- list: blanks are refused, long names and emoji survive ---
+- tapOn: "Add something to buy"
+- inputText: "   "
+- tapOn: "Add to list"
+- tapOn: "Add something to buy"
+# No emoji here: the iOS driver types them unreliably (the app renders them
+# fine — verified by hand). The point of this line is the length.
+- inputText: "Extra virgin cold pressed organic olive oil from that one shop"
+- tapOn: "Add to list"
+- tapOn: "Add something to buy"
+- inputText: "Milk"
+- tapOn: "Add to list"
+- tapOn: "Add something to buy"
+- inputText: "Milk"
+- tapOn: "Add to list"
+- assertVisible: ".*olive oil.*"
+- takeScreenshot: c1-list-junk
+
+# --- shop: junk price, junk expiry ---
+# A shop left open by an earlier run replaces the "Start a shop" button
+# with "Continue at …"; close it so this flow starts from a clean hub.
+- runFlow:
+    when:
+      visible: ".*Continue at.*"
+    commands:
+      - tapOn: ".*Continue at.*"
+      - tapOn: "Finish shopping"
+- tapOn: "Start a shop"
+- tapOn: "Esselunga"
+- extendedWaitUntil:
+    visible: ".*In the basket.*"
+    timeout: 15000
+- tapOn: ".*olive oil.*Add price.*"
+- tapOn:
+    id: "draft-price"
+- inputText: "abc"
+- tapOn: "Expiry date, YYYY-MM-DD"
+- inputText: "not-a-date"
+- tapOn: "Add to basket"
+- assertNotVisible: ".*NaN.*"
+# "not-a-date" must be dropped, not stored as an expiry.
+- assertNotVisible: ".*not-a-date.*"
+- takeScreenshot: c2-junk-price
+
+# comma decimals and a stray second dot
+- tapOn: ".*Milk.*Add price.*"
+- tapOn:
+    id: "draft-price"
+- inputText: "2,50"
+- tapOn: "Add to basket"
+- tapOn: ".*Milk.*Add price.*"
+- tapOn:
+    id: "draft-price"
+- inputText: "1.2.3"
+- tapOn: "Add to basket"
+- assertNotVisible: ".*NaN.*"
+- assertVisible:
+    id: "trip-total"
+- takeScreenshot: c3-totals
+
+# receipt total overrides, then is cleared
+- tapOn: ".*receipt total.*"
+- extendedWaitUntil:
+    visible: "Receipt total"
+    timeout: 10000
+- tapOn:
+    id: "lump-total"
+- inputText: "abc12,34xyz"
+- takeScreenshot: c4-lump
+# Save has to be reachable with the keyboard up — that is why it is a sheet.
+- tapOn: "Save receipt total"
+- assertNotVisible: ".*NaN.*"
+- assertVisible: ".*Receipt total set to.*12.34.*"
+- tapOn: ".*Receipt total set to.*"
+- extendedWaitUntil:
+    visible: "Receipt total"
+    timeout: 10000
+- tapOn: "Clear receipt total"
+- tapOn: "Finish shopping"
+- extendedWaitUntil:
+    visible: ".*Shopping list.*"
+    timeout: 15000
+- assertNotVisible: ".*NaN.*"
+
+# --- trip detail: month-boundary date shifts, then delete ---
+- tapOn: ".*Esselunga.*"
+- extendedWaitUntil:
+    visible: ".*Items.*"
+    timeout: 15000
+- repeat:
+    times: 3
+    commands:
+      - tapOn: "Previous day"
+- takeScreenshot: c5-trip-detail
+- tapOn: "Delete this shop"
+- tapOn: "Delete"
+- extendedWaitUntil:
+    visible: ".*Shopping list.*"
+    timeout: 15000
+- assertNotVisible: ".*NaN.*"
+
+# --- stores: blank names refused, archive everything, empty picker ---
+- tapOn: "Manage stores"
+- extendedWaitUntil:
+    visible: "Add a store"
+    timeout: 15000
+- tapOn: "Add a store"
+- inputText: "   "
+- tapOn: "Add store"
+- tapOn: "Add a store"
+- inputText: "Lidl"
+- tapOn: "Add store"
+- tapOn: "Archive Lidl"
+- tapOn: "Archive Esselunga"
+- tapOn: "Archive Conad"
+- takeScreenshot: c6-stores-archived
+- tapOn: "Back"
+- tapOn: "Start a shop"
+- assertVisible: ".*No stores yet.*"
+- takeScreenshot: c7-empty-picker
+- tapOn: "Cancel"
+- tapOn: "Manage stores"
+- tapOn: "Restore Lidl"
+- tapOn: "Back"
+
+# --- insights: scrub far past and clamp at this month ---
+- tapOn: ".*across.*"
+- extendedWaitUntil:
+    visible: ".*Spend by month.*"
+    timeout: 15000
+- repeat:
+    times: 8
+    commands:
+      - tapOn: "Previous month"
+- assertNotVisible: ".*NaN.*"
+- takeScreenshot: c8-insights-past
+- repeat:
+    times: 14
+    commands:
+      - tapOn: "Next month"
+- assertNotVisible: ".*NaN.*"
+- takeScreenshot: c9-insights-clamped
+- tapOn: "Back"
+- extendedWaitUntil:
+    visible: ".*Shopping list.*"
+    timeout: 15000

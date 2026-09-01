@@ -12,6 +12,22 @@ export const cents = (n: number): number => Math.round(n * 100) / 100;
 
 export const formatEur = (n: number): string => `€${cents(n).toFixed(2)}`;
 
+/**
+ * Bar labels live in a column about 55pt wide, where "€1234.56" truncates.
+ * Whole euros above 100, "k" above 1000 — the exact figure is always one tap
+ * away in the month card.
+ */
+export const formatEurCompact = (n: number): string => {
+  const v = cents(n);
+  if (v >= 1000) {
+    return `€${(v / 1000).toFixed(v >= 10000 ? 0 : 1)}k`;
+  }
+  if (v >= 100) {
+    return `€${Math.round(v)}`;
+  }
+  return `€${v.toFixed(2)}`;
+};
+
 /** A trip's total: the lump sum when one was entered, else its items. */
 export const tripTotal = (trip: Trip): number =>
   trip.manualTotal != null
@@ -64,18 +80,20 @@ export type StoreRow = {
 };
 
 /**
- * Per-store split for a month: "4 times to Lidl, 2 to Esselunga".
- * Sorted by trip count first (that is the sentence the user says out loud),
- * spend as the tie-break. Stores with no trips that month are left out.
+ * Per-store split: "€120 at Lidl over 4 shops, €80 at Esselunga over 2".
+ * Sorted by SPEND because that is what the bar encodes — a bar sized by trips
+ * next to a euro figure is the classic chart lie. Pass `null` as the month for
+ * an all-time split. Stores with no trips in scope are left out.
  */
 export const storeBreakdown = (
   trips: Trip[],
   stores: Store[],
-  monthKey: string,
+  monthKey: string | null,
 ): StoreRow[] => {
-  const total = monthSpend(trips, monthKey);
+  const scope = monthKey == null ? trips : tripsInMonth(trips, monthKey);
+  const total = cents(scope.reduce((sum, t) => sum + tripTotal(t), 0));
   const rows = new Map<string, StoreRow>();
-  for (const trip of tripsInMonth(trips, monthKey)) {
+  for (const trip of scope) {
     const row = rows.get(trip.storeId) ?? {
       storeId: trip.storeId,
       name: storeName(stores, trip.storeId),
@@ -89,7 +107,7 @@ export const storeBreakdown = (
   }
   return [...rows.values()]
     .map(r => ({ ...r, share: total === 0 ? 0 : r.spend / total }))
-    .sort((a, b) => b.trips - a.trips || b.spend - a.spend);
+    .sort((a, b) => b.spend - a.spend || b.trips - a.trips);
 };
 
 /** A deleted store still names its old trips. */
@@ -216,8 +234,30 @@ export const formatDayLabel = (dateKey: string): string => {
   });
 };
 
+/**
+ * Accept only a real calendar day key. Free-text expiry fields otherwise let
+ * "not-a-date" (or 2026-02-31) into the store, where every day-difference
+ * downstream turns into NaN.
+ */
+export const normalizeDateKey = (raw: string): string | undefined => {
+  const value = raw.trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return undefined;
+  }
+  const [y, m, d] = value.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
+  return date.getFullYear() === y &&
+    date.getMonth() === m - 1 &&
+    date.getDate() === d
+    ? value
+    : undefined;
+};
+
 /** "expired yesterday" / "today" / "in 3 days" — plain words beat a date here. */
 export const expiryLabel = (daysLeft: number): string => {
+  if (!Number.isFinite(daysLeft)) {
+    return '';
+  }
   if (daysLeft < -1) {
     return `expired ${Math.abs(daysLeft)} days ago`;
   }
@@ -248,3 +288,28 @@ export const deltaSentence = (
   const word = delta.deltaAbs < 0 ? 'less' : 'more';
   return `${formatEur(Math.abs(delta.deltaAbs))} ${word} than ${prevLabel}`;
 };
+
+export type MonthPoint = { monthKey: string; spend: number; trips: number };
+
+/**
+ * The last `count` months ending at `endMonthKey`, oldest first — the series
+ * behind the month-over-month bars. Empty months are included with a zero, so
+ * a gap in shopping reads as a gap rather than disappearing.
+ */
+export const monthlySeries = (
+  trips: Trip[],
+  endMonthKey: string,
+  count = 6,
+): MonthPoint[] =>
+  Array.from({ length: count }, (_, i) => {
+    const monthKey = shiftMonthKey(endMonthKey, i - (count - 1));
+    return {
+      monthKey,
+      spend: monthSpend(trips, monthKey),
+      trips: monthTripCount(trips, monthKey),
+    };
+  });
+
+/** "Sep" — the x-axis tick for a month column. */
+export const monthTick = (monthKey: string): string =>
+  monthLabel(monthKey).split(' ')[0].slice(0, 3);

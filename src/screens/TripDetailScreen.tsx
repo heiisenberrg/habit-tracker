@@ -169,12 +169,14 @@ function TripDetailScreen() {
               <View style={styles.flex}>
                 <AppText variant="bodyMedium">{item.name}</AppText>
                 <AppText variant="alt" color={colors.ink60}>
-                  {item.qty}
-                  {item.unit}
-                  {item.note ? ` · ${item.note}` : ''}
-                  {item.expiresOn
-                    ? ` · ${expiryLabel(daysUntil(today, item.expiresOn))}`
-                    : ''}
+                  {[
+                    `${item.qty}${item.unit}`,
+                    item.note,
+                    item.expiresOn &&
+                      expiryLabel(daysUntil(today, item.expiresOn)),
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
                 </AppText>
               </View>
               <AppText variant="bodyMedium">{formatEur(item.price)}</AppText>

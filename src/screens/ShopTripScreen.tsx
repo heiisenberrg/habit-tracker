@@ -12,11 +12,15 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppText from '../components/AppText';
 import { Card, IconButton, PrimaryButton } from '../components/common';
+import ReceiptTotalSheet, {
+  parseMoney,
+} from '../components/grocery/ReceiptTotalSheet';
 import StorePickerModal from '../components/grocery/StorePickerModal';
 import { UNITS, Unit } from '../data/grocery';
 import {
   formatDayLabel,
   formatEur,
+  normalizeDateKey,
   storeName,
   tripTotal,
 } from '../services/grocery';
@@ -41,12 +45,6 @@ const emptyDraft = (): Draft => ({
   expiresOn: '',
 });
 
-/** "1,15" and "1.15" both mean the same thing at a checkout. */
-const parseMoney = (raw: string): number => {
-  const n = Number(raw.replace(',', '.').replace(/[^0-9.]/g, ''));
-  return Number.isFinite(n) ? n : 0;
-};
-
 /** The live shop: tick the list, type prices, watch the total climb. */
 function ShopTripScreen() {
   const navigation = useNavigation<any>();
@@ -64,7 +62,6 @@ function ShopTripScreen() {
 
   const [draft, setDraft] = useState<Draft | null>(null);
   const [picking, setPicking] = useState(false);
-  const [lump, setLump] = useState('');
   const [showLump, setShowLump] = useState(false);
 
   const trip = grocery.trips.find(t => t.id === tripId);
@@ -89,7 +86,7 @@ function ShopTripScreen() {
       qty: Number(draft.qty.replace(',', '.')) || 1,
       unit: draft.unit,
       price: parseMoney(draft.price),
-      expiresOn: draft.expiresOn.trim() || undefined,
+      expiresOn: normalizeDateKey(draft.expiresOn),
     };
     if (draft.listItemId) {
       buyListItem(trip.id, draft.listItemId, input);
@@ -140,7 +137,12 @@ function ShopTripScreen() {
       </View>
 
       <ScrollView
-        contentContainerStyle={styles.body}
+        contentContainerStyle={[
+          styles.body,
+          // Clear the sticky total footer, or the last card (the receipt-total
+          // editor) sits under it and its buttons cannot be tapped.
+          { paddingBottom: 132 + insets.bottom },
+        ]}
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
@@ -295,7 +297,9 @@ function ShopTripScreen() {
                 <AppText variant="alt" color={colors.ink60}>
                   {item.qty}
                   {item.unit}
-                  {item.expiresOn ? ` · expires ${item.expiresOn}` : ''}
+                  {item.expiresOn
+                    ? ` · expires ${formatDayLabel(item.expiresOn)}`
+                    : ''}
                 </AppText>
               </View>
               <AppText variant="bodyMedium">{formatEur(item.price)}</AppText>
@@ -329,71 +333,26 @@ function ShopTripScreen() {
         </View>
 
         <View style={styles.section}>
-          {showLump ? (
-            <Card style={styles.draft} accessible={false}>
-              <AppText variant="bodyMedium">Log the receipt total</AppText>
-              <AppText variant="alt" color={colors.ink60}>
-                Overrides the item sum. Clear it to go back to adding up items.
-              </AppText>
-              <TextInput
-                value={lump}
-                onChangeText={setLump}
-                keyboardType="decimal-pad"
-                placeholder="€ total"
-                placeholderTextColor={colors.ink40}
-                style={styles.input}
-                accessibilityLabel="Receipt total in euros"
-                testID="lump-total"
-              />
-              <View style={styles.row}>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Save receipt total"
-                  onPress={() => {
-                    updateTrip(trip.id, { manualTotal: parseMoney(lump) });
-                    setShowLump(false);
-                  }}
-                  style={styles.chip}
-                >
-                  <AppText variant="alt" color={colors.blue}>
-                    Save
-                  </AppText>
-                </Pressable>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Clear receipt total"
-                  onPress={() => {
-                    updateTrip(trip.id, { manualTotal: null });
-                    setLump('');
-                    setShowLump(false);
-                  }}
-                  style={styles.chip}
-                >
-                  <AppText variant="alt" color={colors.ink60}>
-                    Clear
-                  </AppText>
-                </Pressable>
-              </View>
-            </Card>
-          ) : (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Log a receipt total instead"
-              onPress={() => {
-                setLump(
-                  trip.manualTotal != null ? String(trip.manualTotal) : '',
-                );
-                setShowLump(true);
-              }}
-              hitSlop={8}
-            >
-              <AppText variant="alt" color={colors.ink60}>
-                {trip.manualTotal != null
-                  ? `Receipt total set to ${formatEur(trip.manualTotal)} · edit`
-                  : 'Or just log the receipt total'}
-              </AppText>
-            </Pressable>
-          )}
+          <Pressable
+            accessibilityRole="button"
+            // Say the amount, not just the verb: the label replaces the row's
+            // text for VoiceOver, so "Edit" alone would hide the figure.
+            accessibilityLabel={
+              trip.manualTotal != null
+                ? `Receipt total set to ${formatEur(
+                    trip.manualTotal,
+                  )}. Edit it.`
+                : 'Log a receipt total instead'
+            }
+            onPress={() => setShowLump(true)}
+            hitSlop={8}
+          >
+            <AppText variant="alt" color={colors.ink60}>
+              {trip.manualTotal != null
+                ? `Receipt total set to ${formatEur(trip.manualTotal)} · edit`
+                : 'Or just log the receipt total'}
+            </AppText>
+          </Pressable>
         </View>
       </ScrollView>
 
@@ -414,6 +373,20 @@ function ShopTripScreen() {
           style={styles.finish}
         />
       </View>
+
+      <ReceiptTotalSheet
+        visible={showLump}
+        initial={trip.manualTotal}
+        onSave={receiptTotal => {
+          updateTrip(trip.id, { manualTotal: receiptTotal });
+          setShowLump(false);
+        }}
+        onClear={() => {
+          updateTrip(trip.id, { manualTotal: null });
+          setShowLump(false);
+        }}
+        onClose={() => setShowLump(false)}
+      />
 
       <StorePickerModal
         visible={picking}
@@ -441,11 +414,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.md,
   },
-  body: {
-    paddingHorizontal: screenPadding,
-    paddingBottom: spacing.xxl,
-    gap: spacing.lg,
-  },
+  body: { paddingHorizontal: screenPadding, gap: spacing.lg },
   section: { gap: spacing.sm },
   draft: { gap: spacing.sm, padding: spacing.md },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },

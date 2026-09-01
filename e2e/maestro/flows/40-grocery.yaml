@@ -26,6 +26,14 @@ appId: com.lucidbots.lucidbots
 - assertVisible: "Milk"
 - assertVisible: "Onion"
 - takeScreenshot: g2-list
+# A shop left open by an earlier run replaces the "Start a shop" button
+# with "Continue at …"; close it so this flow starts from a clean hub.
+- runFlow:
+    when:
+      visible: ".*Continue at.*"
+    commands:
+      - tapOn: ".*Continue at.*"
+      - tapOn: "Finish shopping"
 - tapOn: "Start a shop"
 - tapOn: "Lidl"
 - extendedWaitUntil:
@@ -52,9 +60,14 @@ appId: com.lucidbots.lucidbots
 # The month card is one element labelled "<month>: <total> across N shops".
 - tapOn: ".*across 1 shops.*"
 - extendedWaitUntil:
-    visible: ".*Where you shopped.*"
+    visible: ".*Spend by month.*"
     timeout: 15000
-# The store row is one element: "Lidl: 1 shop, €1.15, 100 percent…".
+- assertVisible: ".*Spend by shop.*"
+# Each chart mark is one merged element: a month column and a store row.
+- assertVisible: ".*September 2026.*1.15.*"
 - assertVisible: ".*Lidl.*1 shop.*"
 - takeScreenshot: g5-insights
+- tapOn: "All time"
+- assertVisible: ".*Lidl.*1 shop.*"
+- takeScreenshot: g6-insights-alltime
 - tapOn: "Back"

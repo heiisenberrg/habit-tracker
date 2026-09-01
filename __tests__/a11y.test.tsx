@@ -12,6 +12,7 @@ import HabitCard from '../src/components/HabitCard';
 import { Card, IconButton } from '../src/components/common';
 import TasksSection from '../src/components/home/TasksSection';
 import GroceryScreen from '../src/screens/GroceryScreen';
+import TripDetailScreen from '../src/screens/TripDetailScreen';
 import SettingsScreen from '../src/screens/SettingsScreen';
 import { Habit } from '../src/data/seed';
 import { useStore } from '../src/store/useStore';
@@ -21,6 +22,7 @@ jest.mock('@react-navigation/native', () => {
   return {
     ...jest.requireActual('@react-navigation/native'),
     useNavigation: () => ({ navigate: jest.fn(), goBack: jest.fn() }),
+    useRoute: () => ({ params: { tripId: 'trip-under-test' } }),
     // SettingsScreen re-checks permissions on focus; run the effect once.
     useFocusEffect: (effect: () => void | (() => void)) => {
       ReactActual.useEffect(() => {
@@ -235,6 +237,64 @@ describe('GroceryScreen', () => {
     });
     expect(useStore.getState().grocery.list[0].done).toBe(true);
     expect(line.id).toBe(useStore.getState().grocery.list[0].id);
+    await ReactTestRenderer.act(() => {
+      r.unmount();
+    });
+  });
+});
+
+describe('TripDetailScreen', () => {
+  beforeEach(() => {
+    useStore.getState().reset();
+    const id = useStore.getState().startTrip('store-lidl', '2026-09-01');
+    useStore.getState().addTripItem(id, {
+      name: 'Milk',
+      qty: 1,
+      unit: 'l',
+      price: 1.15,
+      expiresOn: '2026-09-04',
+    });
+    // The screen reads the id from the route mock, so pin it.
+    useStore.setState(s => ({
+      grocery: {
+        ...s.grocery,
+        trips: s.grocery.trips.map(t => ({ ...t, id: 'trip-under-test' })),
+      },
+    }));
+  });
+
+  test('date steppers and delete are named, and stepping moves the shop a day', async () => {
+    const r = await render(
+      <SafeAreaProvider initialMetrics={METRICS}>
+        <TripDetailScreen />
+      </SafeAreaProvider>,
+    );
+    expect(labelsOf(r.root)).toEqual(
+      expect.arrayContaining([
+        'Back',
+        'Previous day',
+        'Next day',
+        'Delete this shop',
+        'Remove Milk',
+      ]),
+    );
+
+    const prev = r.root
+      .findAll(n => n.props.accessibilityLabel === 'Previous day')
+      .find(n => typeof n.props.onPress === 'function')!;
+    await ReactTestRenderer.act(() => {
+      prev.props.onPress();
+    });
+    expect(useStore.getState().grocery.trips[0].date).toBe('2026-08-31');
+
+    const next = r.root
+      .findAll(n => n.props.accessibilityLabel === 'Next day')
+      .find(n => typeof n.props.onPress === 'function')!;
+    await ReactTestRenderer.act(() => {
+      next.props.onPress();
+    });
+    expect(useStore.getState().grocery.trips[0].date).toBe('2026-09-01');
+
     await ReactTestRenderer.act(() => {
       r.unmount();
     });

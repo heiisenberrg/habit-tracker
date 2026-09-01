@@ -7,6 +7,11 @@
 import { Trip } from '../src/data/grocery';
 import {
   avgPerTrip,
+  expiryLabel,
+  formatEurCompact,
+  monthTick,
+  monthlySeries,
+  normalizeDateKey,
   expiringSoonNamed,
   monthOverMonth,
   monthSpend,
@@ -89,6 +94,65 @@ describe('grocery metrics', () => {
     expect(avgPerTrip(SEPTEMBER, '2026-09')).toBeCloseTo(33.33, 2);
   });
 
+  test('the monthly series spans six months, zeros included, oldest first', () => {
+    const series = monthlySeries(SEPTEMBER, '2026-09', 6);
+    expect(series.map(p => p.monthKey)).toEqual([
+      '2026-04',
+      '2026-05',
+      '2026-06',
+      '2026-07',
+      '2026-08',
+      '2026-09',
+    ]);
+    expect(series.map(p => p.spend)).toEqual([0, 0, 0, 0, 260, 200]);
+    expect(series[5].trips).toBe(6);
+    // A window that crosses New Year keeps counting backwards correctly.
+    expect(monthlySeries([], '2026-01', 3).map(p => p.monthKey)).toEqual([
+      '2025-11',
+      '2025-12',
+      '2026-01',
+    ]);
+    expect(monthTick('2026-09')).toBe('Sep');
+
+    // Bar labels stay short enough for a narrow column.
+    expect(formatEurCompact(1.15)).toBe('€1.15');
+    expect(formatEurCompact(99.99)).toBe('€99.99');
+    expect(formatEurCompact(200)).toBe('€200');
+    expect(formatEurCompact(1234.56)).toBe('€1.2k');
+    expect(formatEurCompact(12345)).toBe('€12k');
+  });
+
+  test('the store split ranks by money and can span all time', () => {
+    // Esselunga: fewer trips, more money — the bar encodes spend, so it leads.
+    const trips = [
+      trip({ id: 'a', date: '2026-09-02', manualTotal: 10 }),
+      trip({ id: 'b', date: '2026-09-03', manualTotal: 10 }),
+      trip({
+        id: 'c',
+        date: '2026-09-04',
+        storeId: 'store-esselunga',
+        manualTotal: 90,
+      }),
+      trip({
+        id: 'd',
+        date: '2026-08-04',
+        storeId: 'store-conad',
+        manualTotal: 40,
+      }),
+    ];
+    const month = storeBreakdown(trips, STORES, '2026-09');
+    expect(month.map(r => [r.name, r.spend, r.trips])).toEqual([
+      ['Esselunga', 90, 1],
+      ['Lidl', 20, 2],
+    ]);
+    expect(month[0].share).toBeCloseTo(0.818, 3);
+
+    // All time pulls in August's Conad trip and re-bases the shares.
+    const all = storeBreakdown(trips, STORES, null);
+    expect(all.map(r => r.name)).toEqual(['Esselunga', 'Conad', 'Lidl']);
+    expect(all.reduce((sum, r) => sum + r.share, 0)).toBeCloseTo(1, 5);
+  });
+
   test('a lump-sum trip counts; items are summed only when there is no total', () => {
     expect(
       tripTotal(trip({ id: 'a', date: '2026-09-01', manualTotal: 43.2 })),
@@ -162,6 +226,25 @@ describe('grocery metrics', () => {
       ['Milk', 2],
     ]);
     expect(soon[0].storeName).toBe('Lidl');
+  });
+
+  test('a junk expiry never becomes a date, and a NaN gap never becomes words', () => {
+    expect(normalizeDateKey('2026-09-08')).toBe('2026-09-08');
+    expect(normalizeDateKey('  2026-09-08  ')).toBe('2026-09-08');
+    expect(normalizeDateKey('not-a-date')).toBeUndefined();
+    expect(normalizeDateKey('08/09/2026')).toBeUndefined();
+    expect(normalizeDateKey('')).toBeUndefined();
+    // Real format, impossible day.
+    expect(normalizeDateKey('2026-02-31')).toBeUndefined();
+    expect(normalizeDateKey('2026-13-01')).toBeUndefined();
+    // Leap day exists in 2028, not in 2026.
+    expect(normalizeDateKey('2028-02-29')).toBe('2028-02-29');
+    expect(normalizeDateKey('2026-02-29')).toBeUndefined();
+
+    expect(expiryLabel(NaN)).toBe('');
+    expect(expiryLabel(0)).toBe('expires today');
+    expect(expiryLabel(-1)).toBe('expired yesterday');
+    expect(expiryLabel(3)).toBe('expires in 3 days');
   });
 
   test('top items rank the month by spend', () => {

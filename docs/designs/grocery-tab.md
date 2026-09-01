@@ -142,6 +142,7 @@ Pure functions over `trips`, so they are unit-testable without rendering:
 - `expiringSoon(trips, today, days = 5)` → items with `expiresOn` inside the
   window, soonest first, each carrying its trip's store
 - `avgPerTrip(trips, monthKey)`
+- `monthlySeries(trips, endMonthKey, count)` → the month-comparison series
 - `topItems(trips, monthKey, n)` → most-bought names by spend
 
 September reads out as: `monthTripCount = 6`, `storeBreakdown = [Lidl 4 trips
@@ -161,8 +162,24 @@ September reads out as: `monthTripCount = 6`, `storeBreakdown = [Lidl 4 trips
 3. **`TripDetailScreen`** (pushed). Read and edit a past trip: items, total,
    store, date, delete.
 4. **`GroceryInsightsScreen`** (pushed). Month scrubber in the style of
-   `ActivityScreen`'s offset control, total spend, trip count, per-store split
-   bars (trips and spend), month-over-month delta, average per trip, top items.
+   `ActivityScreen`'s offset control, total spend, trip count, month-over-month
+   delta, average per trip, top items, and two charts (added 2026-09-01 at the
+   user's request):
+
+   - **Spend by month** — six columns, oldest first, each labelled with its own
+     euro value; tapping a column selects that month for the whole screen.
+     Empty months keep a stub bar so a gap in shopping reads as a gap.
+   - **Spend by shop** — ranked by money, with a `<month>` / `All time` toggle.
+     Bar length is the share of SPEND, matching the euro figure beside it; the
+     first version sized these bars by trip count while showing a euro value,
+     which is the classic mismatched-encoding chart lie.
+
+   Both are a single measure, so they use one hue in two steps rather than a
+   categorical palette; identity comes from the labels. The steps were checked
+   with the dataviz validator against each surface — brand blue reaches only
+   2.83:1 on the dark surface, so dark mode has its own pair (`#5A63FF` /
+   `#9AA0F0`) instead of a flipped light ramp. Tokens: `chartSteps` in
+   `src/theme/theme.ts`. Bars are plain Views; no charting library.
 5. **`StoresScreen`** (pushed). Add, rename, archive. Archived stores stay
    attached to historical trips but drop out of the picker.
 
