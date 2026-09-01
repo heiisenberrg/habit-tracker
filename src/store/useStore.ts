@@ -1,6 +1,14 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
+import {
+  GrocerySlice,
+  ListItem,
+  Trip,
+  TripItem,
+  Unit,
+  emptyGrocery,
+} from '../data/grocery';
 import type { DailyQuote } from '../data/quotes';
 import { Challenge, Habit, PlannerItem, seedChallenges } from '../data/seed';
 
@@ -96,6 +104,44 @@ type State = {
   quoteShownOn: string | null;
   /** Today's resolved quote — shared with the lock-screen widget. */
   dailyQuote: DailyQuote | null;
+  /** Grocery tab: store registry, the to-buy list, and logged shopping trips. */
+  grocery: GrocerySlice;
+  addStore: (name: string) => void;
+  renameStore: (id: string, name: string) => void;
+  archiveStore: (id: string, archived: boolean) => void;
+  addListItem: (input: {
+    name: string;
+    note?: string;
+    qty?: number;
+    unit?: Unit;
+  }) => void;
+  updateListItem: (id: string, patch: Partial<Omit<ListItem, 'id'>>) => void;
+  removeListItem: (id: string) => void;
+  toggleListItem: (id: string) => void;
+  /** Drop everything already bought, keeping what is still to buy. */
+  clearBoughtFromList: () => void;
+  /** Opens a shop and returns its id (the caller navigates to it). */
+  startTrip: (storeId: string, date?: string) => string;
+  updateTrip: (
+    id: string,
+    patch: Partial<Pick<Trip, 'storeId' | 'date' | 'manualTotal' | 'status'>>,
+  ) => void;
+  addTripItem: (tripId: string, item: Omit<TripItem, 'id'>) => void;
+  updateTripItem: (
+    tripId: string,
+    itemId: string,
+    patch: Partial<Omit<TripItem, 'id'>>,
+  ) => void;
+  removeTripItem: (tripId: string, itemId: string) => void;
+  /** Tick a to-buy line with its price: it becomes an item on the open trip. */
+  buyListItem: (
+    tripId: string,
+    listItemId: string,
+    input: { qty: number; unit: Unit; price: number; expiresOn?: string },
+  ) => void;
+  closeTrip: (tripId: string) => void;
+  deleteTrip: (tripId: string) => void;
+
   /** device integrations (personal app) */
   healthConnected: boolean;
   calendarConnected: boolean;
@@ -225,6 +271,7 @@ const initial = () => ({
   congratsShownOn: null,
   quoteShownOn: null as string | null,
   dailyQuote: null as DailyQuote | null,
+  grocery: emptyGrocery(),
   healthConnected: false,
   calendarConnected: false,
   darkMode: false,
@@ -239,6 +286,10 @@ export const CORRUPT_DUMP_KEY = 'routiner-corrupt-dump';
 
 /** Disambiguates planner ids minted within the same millisecond. */
 let plannerSeq = 0;
+
+/** Same idea for grocery stores, list lines, trips and trip items. */
+let grocerySeq = 0;
+const gid = (prefix: string) => `${prefix}${Date.now()}-${grocerySeq++}`;
 
 /** The persisted DATA fields (no actions) — the export/import contract. */
 export const DATA_KEYS = [
@@ -259,6 +310,7 @@ export const DATA_KEYS = [
   'calendarConnected',
   'darkMode',
   'wellbeing',
+  'grocery',
   'challengeJoinedOn',
   'inbox',
   'prefs',
@@ -351,6 +403,11 @@ export const migrateStore = (persisted: unknown, version: number) => {
         ...prefs,
       },
     };
+  }
+  if (version < 5) {
+    // v5: the Grocery tab. Existing installs get the seeded store registry
+    // and empty list/trips; nothing else in the store is touched.
+    s = { ...s, grocery: s.grocery ?? emptyGrocery() };
   }
   return s;
 };
@@ -632,11 +689,216 @@ export const useStore = create<State>()(
         set(patch as Partial<State>);
       },
 
+      addStore: name => {
+        const clean = name.trim();
+        if (!clean) {
+          return;
+        }
+        set(s => ({
+          grocery: {
+            ...s.grocery,
+            stores: [...s.grocery.stores, { id: gid('store-'), name: clean }],
+          },
+        }));
+      },
+      renameStore: (id, name) => {
+        const clean = name.trim();
+        if (!clean) {
+          return;
+        }
+        set(s => ({
+          grocery: {
+            ...s.grocery,
+            stores: s.grocery.stores.map(st =>
+              st.id === id ? { ...st, name: clean } : st,
+            ),
+          },
+        }));
+      },
+      archiveStore: (id, archived) =>
+        set(s => ({
+          grocery: {
+            ...s.grocery,
+            stores: s.grocery.stores.map(st =>
+              st.id === id ? { ...st, archived } : st,
+            ),
+          },
+        })),
+
+      addListItem: input => {
+        const name = input.name.trim();
+        if (!name) {
+          return;
+        }
+        set(s => ({
+          grocery: {
+            ...s.grocery,
+            list: [
+              {
+                id: gid('gl-'),
+                name,
+                note: input.note?.trim() || undefined,
+                qty: input.qty,
+                unit: input.unit,
+                done: false,
+                addedOn: todayKey(),
+              },
+              ...s.grocery.list,
+            ],
+          },
+        }));
+      },
+      updateListItem: (id, patch) =>
+        set(s => ({
+          grocery: {
+            ...s.grocery,
+            list: s.grocery.list.map(i =>
+              i.id === id ? { ...i, ...patch } : i,
+            ),
+          },
+        })),
+      removeListItem: id =>
+        set(s => ({
+          grocery: {
+            ...s.grocery,
+            list: s.grocery.list.filter(i => i.id !== id),
+          },
+        })),
+      toggleListItem: id =>
+        set(s => ({
+          grocery: {
+            ...s.grocery,
+            list: s.grocery.list.map(i =>
+              i.id === id ? { ...i, done: !i.done } : i,
+            ),
+          },
+        })),
+      clearBoughtFromList: () =>
+        set(s => ({
+          grocery: {
+            ...s.grocery,
+            list: s.grocery.list.filter(i => !i.done),
+          },
+        })),
+
+      startTrip: (storeId, date) => {
+        const id = gid('trip-');
+        set(s => ({
+          grocery: {
+            ...s.grocery,
+            trips: [
+              {
+                id,
+                storeId,
+                date: date ?? todayKey(),
+                items: [],
+                manualTotal: null,
+                status: 'open' as const,
+                createdAt: new Date().toISOString(),
+              },
+              ...s.grocery.trips,
+            ],
+          },
+        }));
+        return id;
+      },
+      updateTrip: (id, patch) =>
+        set(s => ({
+          grocery: {
+            ...s.grocery,
+            trips: s.grocery.trips.map(t =>
+              t.id === id ? { ...t, ...patch } : t,
+            ),
+          },
+        })),
+      addTripItem: (tripId, item) =>
+        set(s => ({
+          grocery: {
+            ...s.grocery,
+            trips: s.grocery.trips.map(t =>
+              t.id === tripId
+                ? { ...t, items: [...t.items, { ...item, id: gid('gi-') }] }
+                : t,
+            ),
+          },
+        })),
+      updateTripItem: (tripId, itemId, patch) =>
+        set(s => ({
+          grocery: {
+            ...s.grocery,
+            trips: s.grocery.trips.map(t =>
+              t.id === tripId
+                ? {
+                    ...t,
+                    items: t.items.map(i =>
+                      i.id === itemId ? { ...i, ...patch } : i,
+                    ),
+                  }
+                : t,
+            ),
+          },
+        })),
+      removeTripItem: (tripId, itemId) =>
+        set(s => ({
+          grocery: {
+            ...s.grocery,
+            trips: s.grocery.trips.map(t =>
+              t.id === tripId
+                ? { ...t, items: t.items.filter(i => i.id !== itemId) }
+                : t,
+            ),
+          },
+        })),
+      buyListItem: (tripId, listItemId, input) =>
+        set(s => {
+          const line = s.grocery.list.find(i => i.id === listItemId);
+          const trip = s.grocery.trips.find(t => t.id === tripId);
+          if (!line || !trip) {
+            return {};
+          }
+          const item: TripItem = {
+            id: gid('gi-'),
+            name: line.name,
+            note: line.note,
+            qty: input.qty,
+            unit: input.unit,
+            price: input.price,
+            expiresOn: input.expiresOn,
+          };
+          return {
+            grocery: {
+              ...s.grocery,
+              list: s.grocery.list.map(i =>
+                i.id === listItemId ? { ...i, done: true } : i,
+              ),
+              trips: s.grocery.trips.map(t =>
+                t.id === tripId ? { ...t, items: [...t.items, item] } : t,
+              ),
+            },
+          };
+        }),
+      closeTrip: tripId =>
+        set(s => ({
+          grocery: {
+            ...s.grocery,
+            trips: s.grocery.trips.map(t =>
+              t.id === tripId ? { ...t, status: 'closed' as const } : t,
+            ),
+          },
+        })),
+      deleteTrip: tripId =>
+        set(s => ({
+          grocery: {
+            ...s.grocery,
+            trips: s.grocery.trips.filter(t => t.id !== tripId),
+          },
+        })),
+
       reset: () => set(initial()),
     }),
     {
       name: 'routiner-store',
-      version: 4,
+      version: 5,
       storage: routinerStorage,
       migrate: migrateStore as (p: unknown, v: number) => State,
     },
