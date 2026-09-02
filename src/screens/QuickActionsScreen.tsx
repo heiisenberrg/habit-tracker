@@ -1,4 +1,4 @@
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,11 +7,18 @@ import { MOOD_FACES } from '../data/seed';
 import { useStore } from '../store/useStore';
 import { cardShadow, colors, radius, spacing } from '../theme/theme';
 
-/** "Add Button" overlay from the Figma Home & Add Habit section. */
+/**
+ * "Add Button" overlay from the Figma Home & Add Habit section.
+ *
+ * `only: 'mood'` renders just the mood picker — the Home mood emoji means
+ * "set my mood", so it should not open the assistant and habit cards too.
+ */
 function QuickActionsScreen() {
   const navigation = useNavigation<any>();
+  const route = useRoute<any>();
   const insets = useSafeAreaInsets();
   const setMood = useStore(s => s.setMood);
+  const moodOnly = route.params?.only === 'mood';
 
   return (
     <View style={styles.fill}>
@@ -19,79 +26,85 @@ function QuickActionsScreen() {
       <View
         style={[styles.sheet, { bottom: Math.max(insets.bottom, 12) + 96 }]}
       >
-        <View style={styles.card}>
-          <Pressable
-            onPress={() => navigation.replace('Assistant')}
-            style={({ pressed }) => pressed && styles.pressed}
-          >
-            <View style={styles.cardHeader}>
-              <AppText variant="bodyMedium">✨ Ask Assistant</AppText>
-              <View style={[styles.chip, styles.chipBlue]}>
+        {!moodOnly && (
+          <>
+            <View style={styles.card}>
+              <Pressable
+                onPress={() => navigation.replace('Assistant')}
+                style={({ pressed }) => pressed && styles.pressed}
+              >
+                <View style={styles.cardHeader}>
+                  <AppText variant="bodyMedium">✨ Ask Assistant</AppText>
+                  <View style={[styles.chip, styles.chipBlue]}>
+                    <AppText variant="alt" color={colors.blue}>
+                      💬
+                    </AppText>
+                  </View>
+                </View>
+                <AppText variant="alt" color={colors.ink40}>
+                  Create habits, tasks & reminders by chat
+                </AppText>
+              </Pressable>
+              <Pressable
+                onPress={() =>
+                  navigation.replace('Assistant', { flow: 'quick' })
+                }
+                style={({ pressed }) => [
+                  styles.quickAdd,
+                  pressed && styles.pressed,
+                ]}
+              >
                 <AppText variant="alt" color={colors.blue}>
-                  💬
+                  ⚡ Quick add — type one line, the rest is parsed
                 </AppText>
-              </View>
+              </Pressable>
             </View>
-            <AppText variant="alt" color={colors.ink40}>
-              Create habits, tasks & reminders by chat
-            </AppText>
-          </Pressable>
-          <Pressable
-            onPress={() => navigation.replace('Assistant', { flow: 'quick' })}
-            style={({ pressed }) => [
-              styles.quickAdd,
-              pressed && styles.pressed,
-            ]}
-          >
-            <AppText variant="alt" color={colors.blue}>
-              ⚡ Quick add — type one line, the rest is parsed
-            </AppText>
-          </Pressable>
-        </View>
-        <View style={styles.row}>
-          <Pressable
-            onPress={() =>
-              navigation.replace('CreateCustomHabit', { kind: 'quit' })
-            }
-            style={({ pressed }) => [
-              styles.card,
-              styles.half,
-              pressed && styles.pressed,
-            ]}
-          >
-            <View style={styles.cardHeader}>
-              <AppText variant="bodyMedium">Quit Bad Habit</AppText>
-              <View style={[styles.chip, styles.chipRed]}>
-                <AppText variant="alt" color={colors.red}>
-                  ✕
+            <View style={styles.row}>
+              <Pressable
+                onPress={() =>
+                  navigation.replace('CreateCustomHabit', { kind: 'quit' })
+                }
+                style={({ pressed }) => [
+                  styles.card,
+                  styles.half,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <View style={styles.cardHeader}>
+                  <AppText variant="bodyMedium">Quit Bad Habit</AppText>
+                  <View style={[styles.chip, styles.chipRed]}>
+                    <AppText variant="alt" color={colors.red}>
+                      ✕
+                    </AppText>
+                  </View>
+                </View>
+                <AppText variant="alt" color={colors.ink40}>
+                  Never too late...
                 </AppText>
-              </View>
-            </View>
-            <AppText variant="alt" color={colors.ink40}>
-              Never too late...
-            </AppText>
-          </Pressable>
-          <Pressable
-            onPress={() => navigation.replace('NewGoodHabit')}
-            style={({ pressed }) => [
-              styles.card,
-              styles.half,
-              pressed && styles.pressed,
-            ]}
-          >
-            <View style={styles.cardHeader}>
-              <AppText variant="bodyMedium">New Good Habit</AppText>
-              <View style={[styles.chip, styles.chipGreen]}>
-                <AppText variant="alt" color={colors.green}>
-                  ✓
+              </Pressable>
+              <Pressable
+                onPress={() => navigation.replace('NewGoodHabit')}
+                style={({ pressed }) => [
+                  styles.card,
+                  styles.half,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <View style={styles.cardHeader}>
+                  <AppText variant="bodyMedium">New Good Habit</AppText>
+                  <View style={[styles.chip, styles.chipGreen]}>
+                    <AppText variant="alt" color={colors.green}>
+                      ✓
+                    </AppText>
+                  </View>
+                </View>
+                <AppText variant="alt" color={colors.ink40}>
+                  For a better life
                 </AppText>
-              </View>
+              </Pressable>
             </View>
-            <AppText variant="alt" color={colors.ink40}>
-              For a better life
-            </AppText>
-          </Pressable>
-        </View>
+          </>
+        )}
         <View style={styles.card}>
           <View style={styles.moodRow}>
             <View style={styles.flex}>
@@ -103,6 +116,9 @@ function QuickActionsScreen() {
             {MOOD_FACES.map(face => (
               <Pressable
                 key={face}
+                accessibilityRole="button"
+                accessibilityLabel={`Set mood ${face}`}
+                testID={`mood-${face}`}
                 onPress={() => {
                   setMood(face);
                   navigation.goBack();

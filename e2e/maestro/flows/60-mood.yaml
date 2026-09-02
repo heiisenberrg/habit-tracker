@@ -1,0 +1,29 @@
+# The Home mood emoji opens the mood picker ALONE — no assistant or habit
+# cards. Run after 00-new-user.
+appId: com.lucidbots.lucidbots
+---
+- launchApp
+- runFlow:
+    when:
+      visible: "Continue"
+    commands:
+      - tapOn: "Continue"
+- extendedWaitUntil:
+    visible: "Hi, Aj.*"
+    timeout: 45000
+# The mood emoji lives in the hero banner's action row.
+- tapOn: "😇"
+- extendedWaitUntil:
+    visible: ".*Add Mood.*"
+    timeout: 10000
+- assertNotVisible: ".*Ask Assistant.*"
+- assertNotVisible: ".*Quit Bad Habit.*"
+- assertNotVisible: ".*New Good Habit.*"
+- takeScreenshot: mood-only
+- tapOn:
+    text: "Set mood 😍"
+- extendedWaitUntil:
+    visible: "Hi, Aj.*"
+    timeout: 10000
+- assertVisible: "😍"
+- takeScreenshot: mood-set

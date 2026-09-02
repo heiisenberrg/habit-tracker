@@ -45,6 +45,8 @@ function NewGoodHabitScreen() {
         New Good Habit
       </AppText>
       <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Create custom habit"
         onPress={() => navigation.replace('CreateCustomHabit')}
         style={({ pressed }) => [styles.customRow, pressed && styles.pressed]}
       >
@@ -53,6 +55,25 @@ function NewGoodHabitScreen() {
         </AppText>
         <View style={styles.plusChip}>
           <PlusIcon size={20} />
+        </View>
+      </Pressable>
+      {/* The only way in: the Home mood emoji now opens the mood picker
+          alone, so this row carries the quit flow. */}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Quit a bad habit"
+        onPress={() =>
+          navigation.replace('CreateCustomHabit', { kind: 'quit' })
+        }
+        style={({ pressed }) => [styles.customRow, pressed && styles.pressed]}
+      >
+        <AppText variant="bodyMedium" style={styles.flex}>
+          Quit a Bad Habit
+        </AppText>
+        <View style={styles.quitChip}>
+          <AppText variant="alt" color={colors.red}>
+            ✕
+          </AppText>
         </View>
       </Pressable>
       <AppText variant="chip" color={colors.ink40}>
@@ -113,6 +134,14 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     padding: spacing.lg,
     ...cardShadow,
+  },
+  quitChip: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(227,82,79,0.12)',
   },
   plusChip: {
     width: 32,

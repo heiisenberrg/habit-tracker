@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useMemo, useState } from 'react';
-import { Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppText from '../components/AppText';
@@ -14,11 +14,7 @@ import { AssistantIcon, DotIcon, NotificationIcon } from '../components/icons';
 import { appLockSatisfied } from '../services/appLock';
 import { fetchBlocksForDate } from '../services/deviceCalendar';
 import { getTodaySteps } from '../services/health';
-import {
-  DailyQuote,
-  getDailyQuote,
-  ZENQUOTES_ATTRIBUTION_URL,
-} from '../services/quotes';
+import { getDailyQuote } from '../services/quotes';
 import { checkRainForSchedule } from '../services/rainAlerts';
 import { getCurrentWeather, Weather } from '../services/weather';
 import {
@@ -74,7 +70,6 @@ function HomeScreen() {
   } = store;
   const [selected, setSelected] = useState(() => todayKey());
   const [weather, setWeather] = useState<Weather | null>(null);
-  const [quote, setQuote] = useState<DailyQuote | null>(null);
   const { zenOn, zenEndLabel, onZenPress } = useZen();
 
   const days = useMemo(() => weekAround(new Date()), []);
@@ -165,13 +160,14 @@ function HomeScreen() {
       : null;
 
   // Quote of the day: one request per day (cached by date), bundled
-  // fallback offline. Re-resolves when the calendar day changes.
+  // fallback offline. Re-resolves when the calendar day changes. Home shows
+  // nothing of it — this only keeps the lock-screen widget's quote current
+  // while the app stays open past midnight.
   const dayKey = todayKey();
   useEffect(() => {
     let alive = true;
     getDailyQuote().then(q => {
       if (alive) {
-        setQuote(q);
         store.setDailyQuote(q);
       }
     });
@@ -227,19 +223,6 @@ function HomeScreen() {
               <AppText variant="body" color={colors.ink60}>
                 Perfect day! Streak extended ⚡
               </AppText>
-            ) : quote ? (
-              <Pressable
-                accessibilityRole="link"
-                accessibilityLabel={`Quote of the day by ${quote.author}. Opens ZenQuotes`}
-                onPress={() =>
-                  Linking.openURL(ZENQUOTES_ATTRIBUTION_URL).catch(() => {})
-                }
-                hitSlop={4}
-              >
-                <AppText variant="body" color={colors.ink60} numberOfLines={2}>
-                  “{quote.text}” — {quote.author}
-                </AppText>
-              </Pressable>
             ) : (
               <AppText variant="body" color={colors.ink60}>
                 Let’s make habits together!
@@ -296,7 +279,7 @@ function HomeScreen() {
           mood={mood}
           zenOn={zenOn}
           onCalendar={() => navigation.navigate('Calendar')}
-          onMood={() => navigation.navigate('QuickActions')}
+          onMood={() => navigation.navigate('QuickActions', { only: 'mood' })}
           onZen={onZenPress}
           onAddHabit={() => navigation.navigate('NewGoodHabit')}
           onAssistant={() => navigation.navigate('Assistant')}

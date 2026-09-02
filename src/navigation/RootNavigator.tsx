@@ -39,7 +39,7 @@ export type RootStackParamList = {
   TripDetail: { tripId: string };
   GroceryInsights: undefined;
   Stores: undefined;
-  QuickActions: undefined;
+  QuickActions: { only?: 'mood' } | undefined;
   NewGoodHabit: undefined;
   Assistant: { flow?: 'habit' | 'task' | 'reminder' | 'quick' } | undefined;
   CreateCustomHabit: { kind?: 'build' | 'quit' } | undefined;
