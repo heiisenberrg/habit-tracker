@@ -11,11 +11,10 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle } from 'react-native-svg';
 import AppText from '../components/AppText';
-import { colors, gradients, radius, spacing } from '../theme/theme';
+import { colors, radius, spacing } from '../theme/theme';
 
 type Page = { image: ImageSourcePropType; title: string; body: string };
 
@@ -51,12 +50,7 @@ function OnboardingScreen() {
   const illustrationHeight = height * 0.44;
 
   return (
-    <LinearGradient
-      colors={gradients.blue}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={styles.fill}
-    >
+    <View style={styles.fill}>
       {/* faint concentric circles backdrop */}
       <Svg
         width={width}
@@ -170,18 +164,21 @@ function OnboardingScreen() {
               →
             </AppText>
           </View>
-          <AppText variant="bodyMedium">Continue with E-mail</AppText>
+          <AppText variant="bodyMedium" color={colors.white}>
+            Continue with E-mail
+          </AppText>
         </Pressable>
         <AppText variant="alt" color="rgba(255,255,255,0.65)" center>
           Your habits and profile stay on this device
         </AppText>
       </View>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  fill: { flex: 1 },
+  // The system's dark ground; literal — onboarding never theme-flips.
+  fill: { flex: 1, backgroundColor: '#161616' },
   page: { alignItems: 'center' },
   textBlock: {
     alignSelf: 'stretch',
@@ -203,11 +200,11 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   dot: { width: 8, height: 8, borderRadius: 4 },
-  dotActive: { backgroundColor: colors.surface },
+  dotActive: { backgroundColor: colors.white },
   dotIdle: { backgroundColor: 'rgba(255,255,255,0.35)' },
   actions: { paddingHorizontal: spacing.xl, gap: spacing.md },
   emailButton: {
-    backgroundColor: colors.surface,
+    backgroundColor: '#E50914',
     borderRadius: radius.xl,
     height: 52,
     flexDirection: 'row',
@@ -219,7 +216,7 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: colors.ink,
+    backgroundColor: 'rgba(255,255,255,0.25)',
     alignItems: 'center',
     justifyContent: 'center',
   },

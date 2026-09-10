@@ -1,5 +1,5 @@
 /**
- * Routiner Assistant — scripted conversational flows. No LLM: every bot turn
+ * Slay Assistant — scripted conversational flows. No LLM: every bot turn
  * is a predefined question; answers come from quick-reply chips or short text.
  * A pure state machine so the chat UI stays dumb and the logic stays testable.
  */
@@ -220,7 +220,7 @@ export const FLOWS: Record<Flow['id'], Flow> = {
 };
 
 export const ROOT_MENU = {
-  bot: 'Hey! I’m your Routiner assistant ✨ Creating things by hand is boring — tell me what to set up:',
+  bot: 'Hey! I’m your Slay assistant ✨ Creating things by hand is boring — tell me what to set up:',
   options: [
     { label: '🌱 New habit', value: 'habit' },
     { label: '✅ Task / time block', value: 'task' },

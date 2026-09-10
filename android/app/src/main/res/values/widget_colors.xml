@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Widget palette = src/theme/theme.ts light tokens. Widgets follow the
+     SYSTEM theme (the launcher inflates them), hence values-night rather
+     than the in-app toggle. Note Android hex is #AARRGGBB: the theme's CSS
+     #000000B3 secondary becomes #B3000000 here. -->
+<resources>
+    <color name="widget_surface">#FFFFFF</color>
+    <color name="widget_background">#F5F5F5</color>
+    <color name="widget_text">#000000</color>
+    <color name="widget_text_secondary">#B3000000</color>
+    <color name="widget_accent">#E50914</color>
+    <color name="widget_dim">#D9D9D9</color>
+</resources>

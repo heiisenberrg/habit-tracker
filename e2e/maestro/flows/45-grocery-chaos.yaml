@@ -1,6 +1,6 @@
 # Grocery tab, hostile inputs: junk prices, junk expiry dates, blank names,
 # archiving every store, date shifts across a month boundary, deleting a shop.
-appId: com.lucidbots.lucidbots
+appId: com.lucidbots.lucidapp.adhoc
 ---
 - launchApp
 - runFlow:

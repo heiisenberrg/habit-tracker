@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Dark counterparts of values/widget_colors.xml (theme.ts dark tokens). -->
+<resources>
+    <color name="widget_surface">#232323</color>
+    <color name="widget_background">#161616</color>
+    <color name="widget_text">#FFFFFF</color>
+    <color name="widget_text_secondary">#B3FFFFFF</color>
+    <color name="widget_accent">#E50914</color>
+    <color name="widget_dim">#404040</color>
+</resources>

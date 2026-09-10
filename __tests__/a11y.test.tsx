@@ -176,7 +176,6 @@ describe('SettingsScreen', () => {
       'Weather & rain alerts',
       'Apple Health',
       'Device Calendar',
-      'App Lock',
       'Zen runs iOS Focus',
     ]) {
       expect(labels).toContain(name);

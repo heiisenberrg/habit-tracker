@@ -1,0 +1,44 @@
+# Logbook: track a haircut, log it today, see the rhythm line.
+appId: com.lucidbots.lucidapp.adhoc
+---
+- launchApp
+- runFlow:
+    when:
+      visible: "Continue"
+    commands:
+      - tapOn: "Continue"
+- extendedWaitUntil:
+    visible: "Hi, Aj.*"
+    timeout: 45000
+- tapOn: "Activity"
+- tapOn: "Logbook"
+- extendedWaitUntil:
+    visible: "Add tracker"
+    timeout: 15000
+- takeScreenshot: l1-empty
+- tapOn:
+    id: "tracker-name"
+- inputText: "Haircut"
+# Picking an emoji chip also dismisses the keyboard.
+- tapOn: "Emoji 💇"
+- tapOn: "Add tracker"
+- extendedWaitUntil:
+    visible: ".*Haircut.*never logged.*"
+    timeout: 15000
+- tapOn: "Log Haircut today"
+- extendedWaitUntil:
+    visible: ".*Haircut.*today · 1 time.*"
+    timeout: 15000
+- takeScreenshot: l2-logged
+- tapOn: "Back"
+# The "Last time" card surfaces the logbook on Activity.
+- extendedWaitUntil:
+    visible: ".*This month.*"
+    timeout: 15000
+- scrollUntilVisible:
+    element:
+      text: ".*Last time.*"
+    direction: DOWN
+    centerElement: true
+- assertVisible: ".*Haircut.*today.*"
+- takeScreenshot: l3-activity-card

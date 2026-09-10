@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A future day, or a past one that was not perfect. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="@color/widget_dim" />
+    <size
+        android:width="10dp"
+        android:height="10dp" />
+</shape>

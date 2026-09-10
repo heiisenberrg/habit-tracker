@@ -73,7 +73,7 @@ names the unlock habit and its progress from the `sharedState` payload.
 
 **Context:** The provisioning spike (OV3) was blocked on credentials, not an
 entitlement refusal: Xcode's session for arajendran@lucidbots.com is expired,
-so no profile for `com.lucidbots.lucidbots.RoutinerShield` could be created.
+so no profile for `com.lucidbots.lucidapp.RoutinerShield` could be created.
 Everything else is DONE and committed: `ios/RoutinerShield/` (Swift data
 source reading `sharedState`, Info.plist, family-controls entitlements) and
 `ios/add-shield-target.rb`. The extension compiles clean for simulator.
@@ -268,16 +268,50 @@ GitHub Actions macOS budget.
 
 ## Android
 
-### Android parity (incl. dark theming pass)
+### Google Sign-In for Drive backup (user action, 2026-09-10)
 
-**What:** Dark-palette theming pass (deferred from the active plan, decision 11B), Google Fit steps, home-screen widget, AppCompatDelegate-driven dark mode, notification action parity.
+**What:** Add the Android app to Firebase project `slay-d7d4f`, enable the
+Google sign-in provider, and paste the Web client id into
+`src/config/google.ts`. Until then the Google Drive rows in Settings show a
+single "Set up Google Sign-In" line and only the transparent Android Auto
+Backup runs.
 
-**Why:** The release APK works today but is a second-class citizen; parity makes it a real fallback device.
+**Context:** `docs/android-google-drive-setup.md` has every step, the debug
+SHA-1 and the emulator `bmgr` test cycle. The code path is complete and
+unit-tested against a mocked Drive API; only the OAuth client is missing.
 
-**Context:** iOS-first by design (2026-08-30 CEO review; outside voice called Android polish "audience of zero" and the user agreed to defer). Services already Platform-guard cleanly, so each item is additive.
+**Effort:** S · **Priority:** P2 · **Depends on:** Firebase console access
 
-**Effort:** L
-**Priority:** P4
-**Depends on:** None
+### Maestro flows: Android-portable selectors (2026-09-10)
+
+**What:** The runner supports `PLATFORM=android`, but several flows lean on
+iOS merging a card's children into one accessible element (`.*Milk.*Add
+price.*`-style regexes), on iOS prompt copy ("Allow While Using App"), on a
+coordinate tap in 15-dark-mode, and on iOS keyboard behaviour. Add explicit
+`accessibilityLabel`s on those rows and platform-aware prompt steps so the
+same flows pass on both.
+
+**Context:** the full list is in `e2e/maestro/README.md` (Android section).
+
+**Effort:** M · **Priority:** P3 · **Depends on:** none
+
+### iOS App Lock still waits on the Family Controls profile
+
+**What:** The Settings App Lock section renders only on Android. On iOS it
+returns once Apple mints the `com.apple.developer.family-controls` profile
+(see the Shield section above); the native module and service are intact.
+
+**Effort:** S · **Priority:** P2 · **Depends on:** Apple ID re-auth in Xcode
 
 ## Completed
+
+### Android parity (done 2026-09-10)
+
+Dark mode (PlatformColor tokens + persisted night mode), cross-platform
+action sheet, location permissions for weather, Health Connect steps/sleep,
+Do Not Disturb behind Zen, streak + quote home-screen widgets, App Lock
+(usage-access polling + overlay shield), Screen Time report from
+UsageStatsManager, Auto Backup rules + Google Drive backup/restore, Slay
+launcher icon + native launch screen, Maestro Android runner. Map and
+permissions in `docs/android.md`.
+

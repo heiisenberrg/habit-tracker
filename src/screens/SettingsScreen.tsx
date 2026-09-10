@@ -1,7 +1,6 @@
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  ActionSheetIOS,
   Alert,
   Appearance,
   AppState,
@@ -17,15 +16,10 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppText from '../components/AppText';
 import { IconButton } from '../components/common';
+import AppLockSection from '../components/settings/AppLockSection';
+import DriveBackupSection from '../components/settings/DriveBackupSection';
+import ZenFocusRow from '../components/settings/ZenFocusRow';
 import { afterMutation } from '../services/afterMutation';
-import {
-  AppLockState,
-  applyAppLock,
-  appLockConditionLabel,
-  getAppLockState,
-  pickLockedApps,
-  requestAppLockAuth,
-} from '../services/appLock';
 import {
   applyBackup,
   lastBackupAt,
@@ -34,7 +28,7 @@ import {
   shareExport,
 } from '../services/backup';
 import { connectCalendar } from '../services/deviceCalendar';
-import { connectHealth } from '../services/health';
+import { connectHealth, healthSourceName } from '../services/health';
 import {
   cancelReminder,
   hasNotificationPermission,
@@ -137,7 +131,7 @@ function PermissionRow({
         <AppText variant="bodyMedium">{label}</AppText>
         <AppText variant="alt" color={blocked ? colors.red : colors.ink60}>
           {blocked
-            ? 'Off — blocked in iOS Settings. Tap to open Settings ›'
+            ? 'Off — blocked in system Settings. Tap to open Settings ›'
             : isPending
             ? 'Waiting for permission…'
             : subtitle}
@@ -146,7 +140,7 @@ function PermissionRow({
       <Switch
         testID={testID}
         accessibilityLabel={label}
-        accessibilityHint={blocked ? 'Blocked in iOS Settings' : undefined}
+        accessibilityHint={blocked ? 'Blocked in system Settings' : undefined}
         value={value && !blocked}
         disabled={isPending}
         onValueChange={onValueChange}
@@ -170,21 +164,8 @@ function SettingsScreen() {
     setDarkMode,
     prefs,
     setPref,
-    appLock,
-    setAppLock,
-    completions,
-    statuses,
-    zen,
-    setZen,
   } = useStore();
   const reminderHabits = habits.filter(h => h.reminder);
-
-  /* ------------------------------ App Lock ------------------------------ */
-
-  const [lockInfo, setLockInfo] = useState<AppLockState | null>(null);
-  useEffect(() => {
-    getAppLockState().then(setLockInfo);
-  }, []);
 
   /* ------------------------------ Backup ------------------------------ */
 
@@ -247,90 +228,6 @@ function SettingsScreen() {
     );
   };
 
-  /** Persist a prefs change and sync the Screen Time shield right away. */
-  const syncAppLock = (patch: Partial<typeof appLock>) => {
-    const next = { ...appLock, ...patch };
-    setAppLock(patch);
-    applyAppLock(next, habits, completions, statuses).then(() =>
-      getAppLockState().then(setLockInfo),
-    );
-  };
-
-  const toggleAppLock = async (on: boolean) => {
-    if (!on) {
-      syncAppLock({ enabled: false });
-      return;
-    }
-    const ok = await requestAppLockAuth();
-    if (!ok) {
-      Alert.alert(
-        'Screen Time access needed',
-        'App Lock uses Apple Screen Time and needs permission on a real ' +
-          'iPhone with iOS 16 or newer. The simulator cannot enforce locks.',
-      );
-      return;
-    }
-    let info = await getAppLockState();
-    if (info.apps + info.categories === 0) {
-      await pickLockedApps();
-      info = await getAppLockState();
-    }
-    setLockInfo(info);
-    if (info.apps + info.categories === 0) {
-      Alert.alert('No apps picked', 'Choose at least one app to lock.');
-      return;
-    }
-    syncAppLock({
-      enabled: true,
-      habitId:
-        appLock.condition === 'habit'
-          ? appLock.habitId ?? habits[0]?.id ?? null
-          : appLock.habitId,
-    });
-  };
-
-  const chooseLockedApps = async () => {
-    await pickLockedApps();
-    const info = await getAppLockState();
-    setLockInfo(info);
-    applyAppLock(appLock, habits, completions, statuses);
-  };
-
-  const UNLOCK_TIMES = ['12:00', '18:00', '21:00'];
-  const chooseUnlockCondition = () => {
-    if (Platform.OS !== 'ios') {
-      return;
-    }
-    const options = [
-      ...habits.map(h => `${h.emoji} After “${h.name}” is done`),
-      '✅ After all habits are done',
-      ...UNLOCK_TIMES.map(t => `🕐 Daily at ${t}`),
-      'Cancel',
-    ];
-    ActionSheetIOS.showActionSheetWithOptions(
-      {
-        title: 'Apps unlock…',
-        options,
-        cancelButtonIndex: options.length - 1,
-      },
-      idx => {
-        if (idx === options.length - 1) {
-          return;
-        }
-        if (idx < habits.length) {
-          syncAppLock({ condition: 'habit', habitId: habits[idx].id });
-        } else if (idx === habits.length) {
-          syncAppLock({ condition: 'all' });
-        } else {
-          syncAppLock({
-            condition: 'time',
-            until: UNLOCK_TIMES[idx - habits.length - 1],
-          });
-        }
-      },
-    );
-  };
-
   const toggleReminder = async (habitId: string, on: boolean) => {
     const habit = habits.find(h => h.id === habitId);
     if (!habit?.reminder) {
@@ -362,7 +259,7 @@ function SettingsScreen() {
         });
         Alert.alert(
           'Notifications disabled',
-          'Allow notifications for Routiner to get reminders.',
+          'Allow notifications for Slay to get reminders.',
         );
       }
     } else {
@@ -392,11 +289,11 @@ function SettingsScreen() {
     } else if (key === 'share') {
       Share.share({
         message:
-          'I’m building better habits with Routiner, a simple habit tracker. Join me and let’s keep our streaks going! 🌱',
+          'I’m building better habits with Slay, a simple habit tracker. Join me and let’s keep our streaks going! 🌱',
       }).catch(() => {});
     } else if (key === 'about') {
       Alert.alert(
-        `Routiner v${APP_VERSION}`,
+        `Slay v${APP_VERSION}`,
         'A small personal habit tracker: build good habits, quit bad ones, and keep the streak alive. Your data stays on this device.\n\nQuote of the day provided by ZenQuotes API (zenquotes.io).',
       );
     }
@@ -411,8 +308,10 @@ function SettingsScreen() {
     setIntegration('healthConnected', ok);
     if (!ok) {
       Alert.alert(
-        'Apple Health unavailable',
-        'Health access could not be enabled on this device.',
+        `${healthSourceName} unavailable`,
+        Platform.OS === 'android'
+          ? 'Health Connect access could not be enabled. Make sure it is installed and up to date, then allow steps and sleep.'
+          : 'Health access could not be enabled on this device.',
       );
     }
   };
@@ -480,7 +379,7 @@ function SettingsScreen() {
     } else {
       Alert.alert(
         'Notifications are off',
-        'Allow notifications for Routiner in iOS Settings to get the evening recap.',
+        'Allow notifications for Slay in system Settings to get the evening recap.',
         [
           { text: 'Not now', style: 'cancel' },
           { text: 'Open Settings', onPress: openIosSettings },
@@ -505,7 +404,7 @@ function SettingsScreen() {
     if (!ok) {
       Alert.alert(
         'Location is off',
-        'Allow location for Routiner in iOS Settings to show local weather and rain alerts.',
+        'Allow location for Slay in system Settings to show local weather and rain alerts.',
         [
           { text: 'Not now', style: 'cancel' },
           { text: 'Open Settings', onPress: openIosSettings },
@@ -633,13 +532,13 @@ function SettingsScreen() {
               <AppText variant="body">❤️</AppText>
             </View>
             <View style={styles.flex}>
-              <AppText variant="bodyMedium">Apple Health</AppText>
+              <AppText variant="bodyMedium">{healthSourceName}</AppText>
               <AppText variant="alt" color={colors.ink40}>
                 Auto-track steps into your Walk habit
               </AppText>
             </View>
             <Switch
-              accessibilityLabel="Apple Health"
+              accessibilityLabel={healthSourceName}
               value={healthConnected}
               onValueChange={toggleHealth}
               trackColor={{ true: colors.green, false: colors.ink10 }}
@@ -666,101 +565,8 @@ function SettingsScreen() {
         <AppText variant="chip" color={colors.ink40}>
           Focus
         </AppText>
-        <View style={styles.group}>
-          <View style={[styles.row, appLock.enabled && styles.rowBorder]}>
-            <View style={styles.iconChip}>
-              <AppText variant="body">🔒</AppText>
-            </View>
-            <View style={styles.flex}>
-              <AppText variant="bodyMedium">App Lock</AppText>
-              <AppText variant="alt" color={colors.ink40}>
-                {appLock.enabled
-                  ? `Locked ${appLockConditionLabel(appLock, habits)}`
-                  : 'Block distracting apps until you earn them'}
-              </AppText>
-            </View>
-            <Switch
-              accessibilityLabel="App Lock"
-              value={appLock.enabled}
-              onValueChange={toggleAppLock}
-              trackColor={{ true: colors.green, false: colors.ink10 }}
-            />
-          </View>
-          {appLock.enabled && (
-            <>
-              <Pressable
-                style={[styles.row, styles.rowBorder]}
-                onPress={chooseLockedApps}
-              >
-                <View style={styles.iconChip}>
-                  <AppText variant="body">📱</AppText>
-                </View>
-                <View style={styles.flex}>
-                  <AppText variant="bodyMedium">Locked apps</AppText>
-                  <AppText variant="alt" color={colors.ink40}>
-                    {lockInfo
-                      ? `${lockInfo.apps} app${
-                          lockInfo.apps === 1 ? '' : 's'
-                        }` +
-                        (lockInfo.categories
-                          ? ` · ${lockInfo.categories} categor${
-                              lockInfo.categories === 1 ? 'y' : 'ies'
-                            }`
-                          : '')
-                      : 'Loading…'}
-                  </AppText>
-                </View>
-                <AppText variant="body" color={colors.ink40}>
-                  ›
-                </AppText>
-              </Pressable>
-              <Pressable style={styles.row} onPress={chooseUnlockCondition}>
-                <View style={styles.iconChip}>
-                  <AppText variant="body">🔓</AppText>
-                </View>
-                <View style={styles.flex}>
-                  <AppText variant="bodyMedium">Unlocks</AppText>
-                  <AppText variant="alt" color={colors.ink40}>
-                    {appLockConditionLabel(appLock, habits)}
-                  </AppText>
-                </View>
-                <AppText variant="body" color={colors.ink40}>
-                  ›
-                </AppText>
-              </Pressable>
-            </>
-          )}
-        </View>
-        <View style={styles.group}>
-          <View style={styles.row}>
-            <View style={styles.iconChip}>
-              <AppText variant="body">🧘</AppText>
-            </View>
-            <View style={styles.flex}>
-              <AppText variant="bodyMedium">Zen runs iOS Focus</AppText>
-              <AppText variant="alt" color={colors.ink40}>
-                Starting zen also triggers your “Routiner Zen” Shortcut
-              </AppText>
-            </View>
-            <Switch
-              accessibilityLabel="Zen runs iOS Focus"
-              value={zen.useFocusShortcut}
-              onValueChange={v => {
-                setZen({ useFocusShortcut: v });
-                if (v) {
-                  Alert.alert(
-                    'One-time setup',
-                    'In the Shortcuts app, create a shortcut named ' +
-                      '“Routiner Zen” with the action “Set Focus” (e.g. Do ' +
-                      'Not Disturb until turned off). Starting zen will run ' +
-                      'it, silencing every app’s notifications system-wide.',
-                  );
-                }
-              }}
-              trackColor={{ true: colors.green, false: colors.ink10 }}
-            />
-          </View>
-        </View>
+        <AppLockSection />
+        <ZenFocusRow />
         {reminderHabits.length > 0 && (
           <>
             <AppText variant="chip" color={colors.ink40}>
@@ -799,7 +605,10 @@ function SettingsScreen() {
           Backup
         </AppText>
         <View style={styles.group}>
-          <Pressable style={[styles.row, styles.rowBorder]} onPress={onExport}>
+          <Pressable
+            style={[styles.row, Platform.OS === 'ios' && styles.rowBorder]}
+            onPress={onExport}
+          >
             <View style={styles.iconChip}>
               <AppText variant="body">📤</AppText>
             </View>
@@ -813,23 +622,27 @@ function SettingsScreen() {
               ›
             </AppText>
           </Pressable>
-          <Pressable style={styles.row} onPress={onImport}>
-            <View style={styles.iconChip}>
-              <AppText variant="body">📥</AppText>
-            </View>
-            <View style={styles.flex}>
-              <AppText variant="bodyMedium">Import backup</AppText>
-              <AppText variant="alt" color={colors.ink40}>
-                {backupAt
-                  ? `Last auto-backup: ${new Date(backupAt).toLocaleString()}`
-                  : 'No auto-backup yet — happens when you leave the app'}
+          {/* Paste-import is iOS-only; Android restores through Google Drive below. */}
+          {Platform.OS === 'ios' && (
+            <Pressable style={styles.row} onPress={onImport}>
+              <View style={styles.iconChip}>
+                <AppText variant="body">📥</AppText>
+              </View>
+              <View style={styles.flex}>
+                <AppText variant="bodyMedium">Import backup</AppText>
+                <AppText variant="alt" color={colors.ink40}>
+                  {backupAt
+                    ? `Last auto-backup: ${new Date(backupAt).toLocaleString()}`
+                    : 'No auto-backup yet — happens when you leave the app'}
+                </AppText>
+              </View>
+              <AppText variant="body" color={colors.ink40}>
+                ›
               </AppText>
-            </View>
-            <AppText variant="body" color={colors.ink40}>
-              ›
-            </AppText>
-          </Pressable>
+            </Pressable>
+          )}
         </View>
+        <DriveBackupSection />
         <AppText variant="chip" color={colors.ink40}>
           About
         </AppText>

@@ -152,9 +152,14 @@ describe('migrateStore', () => {
       planner: [{ id: 't1', title: 'user item that happens to be t1' }],
     };
     const out = migrateStore(v4, 4) as Record<string, unknown>;
-    const { grocery, dates, ...rest } = out;
+    const { grocery, dates, expenses, debts, recurring, logbook, ...rest } =
+      out;
     expect(rest).toEqual(v4);
     expect(dates).toEqual([]);
+    expect(expenses).toEqual([]);
+    expect(debts).toEqual([]);
+    expect(recurring).toEqual([]);
+    expect(logbook).toEqual({ trackers: [], entries: [] });
     expect(grocery).toEqual({
       stores: [
         { id: 'store-lidl', name: 'Lidl' },
@@ -174,10 +179,17 @@ describe('migrateStore', () => {
       planner: [{ id: 't1', title: 'user item that happens to be t1' }],
       grocery: { stores: [{ id: 's1', name: 'Mine' }], list: [], trips: [] },
     };
-    expect(migrateStore(v5, 5)).toEqual({ ...v5, dates: [] });
+    expect(migrateStore(v5, 5)).toEqual({
+      ...v5,
+      dates: [],
+      expenses: [],
+      debts: [],
+      recurring: [],
+      logbook: { trackers: [], entries: [] },
+    });
   });
 
-  test('v6 passthrough is untouched', () => {
+  test('v6 gains only the expenses list; everything else passes through', () => {
     const v6 = {
       streak: { current: 9, best: 12 },
       historyReconciled: true,
@@ -186,7 +198,86 @@ describe('migrateStore', () => {
       grocery: { stores: [{ id: 's1', name: 'Mine' }], list: [], trips: [] },
       dates: [{ id: 'date-1', title: 'Ajay’s birthday', day: 25, month: 6 }],
     };
-    expect(migrateStore(v6, 6)).toEqual(v6);
+    expect(migrateStore(v6, 6)).toEqual({
+      ...v6,
+      expenses: [],
+      debts: [],
+      recurring: [],
+      logbook: { trackers: [], entries: [] },
+    });
+  });
+
+  test('v7 gains only the debts list; everything else passes through', () => {
+    const v7 = {
+      streak: { current: 9, best: 12 },
+      historyReconciled: true,
+      prefs: { sounds: true, vacationMode: false, recap: false, weather: true },
+      planner: [{ id: 't1', title: 'user item that happens to be t1' }],
+      grocery: { stores: [{ id: 's1', name: 'Mine' }], list: [], trips: [] },
+      dates: [{ id: 'date-1', title: 'Ajay’s birthday', day: 25, month: 6 }],
+      expenses: [{ id: 'exp-1', monthKey: '2026-09', amount: 650 }],
+    };
+    expect(migrateStore(v7, 7)).toEqual({
+      ...v7,
+      debts: [],
+      recurring: [],
+      logbook: { trackers: [], entries: [] },
+    });
+  });
+
+  test('v8 gains only the recurring list; everything else passes through', () => {
+    const v8 = {
+      streak: { current: 9, best: 12 },
+      historyReconciled: true,
+      prefs: { sounds: true, vacationMode: false, recap: false, weather: true },
+      planner: [{ id: 't1', title: 'user item that happens to be t1' }],
+      grocery: { stores: [{ id: 's1', name: 'Mine' }], list: [], trips: [] },
+      dates: [{ id: 'date-1', title: 'Ajay’s birthday', day: 25, month: 6 }],
+      expenses: [{ id: 'exp-1', monthKey: '2026-09', amount: 650 }],
+      debts: [{ id: 'debt-1', person: 'Marco', amount: 50 }],
+    };
+    expect(migrateStore(v8, 8)).toEqual({
+      ...v8,
+      recurring: [],
+      logbook: { trackers: [], entries: [] },
+    });
+  });
+
+  test('v9 gains only the logbook; everything else passes through', () => {
+    const v9 = {
+      streak: { current: 9, best: 12 },
+      historyReconciled: true,
+      prefs: { sounds: true, vacationMode: false, recap: false, weather: true },
+      planner: [{ id: 't1', title: 'user item that happens to be t1' }],
+      grocery: { stores: [{ id: 's1', name: 'Mine' }], list: [], trips: [] },
+      dates: [{ id: 'date-1', title: 'Ajay’s birthday', day: 25, month: 6 }],
+      expenses: [{ id: 'exp-1', monthKey: '2026-09', amount: 650 }],
+      debts: [{ id: 'debt-1', person: 'Marco', amount: 50 }],
+      recurring: [{ id: 'rec-1', day: 1, amount: 650 }],
+    };
+    expect(migrateStore(v9, 9)).toEqual({
+      ...v9,
+      logbook: { trackers: [], entries: [] },
+    });
+  });
+
+  test('v10 passthrough is untouched', () => {
+    const v10 = {
+      streak: { current: 9, best: 12 },
+      historyReconciled: true,
+      prefs: { sounds: true, vacationMode: false, recap: false, weather: true },
+      planner: [{ id: 't1', title: 'user item that happens to be t1' }],
+      grocery: { stores: [{ id: 's1', name: 'Mine' }], list: [], trips: [] },
+      dates: [{ id: 'date-1', title: 'Ajay’s birthday', day: 25, month: 6 }],
+      expenses: [{ id: 'exp-1', monthKey: '2026-09', amount: 650 }],
+      debts: [{ id: 'debt-1', person: 'Marco', amount: 50 }],
+      recurring: [{ id: 'rec-1', day: 1, amount: 650 }],
+      logbook: {
+        trackers: [{ id: 'trk-1', name: 'Haircut', emoji: '💇' }],
+        entries: [{ id: 'log-1', trackerId: 'trk-1', date: '2026-07-15' }],
+      },
+    };
+    expect(migrateStore(v10, 10)).toEqual(v10);
   });
 
   test('never returns initial() — user fields survive any version', () => {

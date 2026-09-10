@@ -10,7 +10,11 @@ import * as svg from '../assets/icons/svgs';
 
 type LayerSpec = { xml: string; l: number; t: number; w: number; h: number };
 
-export type IconProps = { size?: number };
+export type IconProps = {
+  size?: number;
+  /** Tint every layer this color (monotone) instead of the Figma duotone. */
+  color?: string;
+};
 
 /** Remap the Figma light-ink fills for dark mode (cached per layer). */
 const darkCache = new Map<string, string>();
@@ -26,8 +30,26 @@ const darkXml = (xml: string): string => {
   return out;
 };
 
+/**
+ * Flatten a layer to one tint: every drawn fill/stroke becomes `color`.
+ * `fill="none"` (the svg root) and gradient urls are left alone. Cached —
+ * the tab bar re-renders on every tab change.
+ */
+const tintCache = new Map<string, string>();
+const tintXml = (xml: string, color: string): string => {
+  const key = `${color}|${xml}`;
+  let out = tintCache.get(key);
+  if (!out) {
+    out = xml
+      .replace(/fill="(#[0-9a-f]{3,8}|white|black)"/gi, `fill="${color}"`)
+      .replace(/stroke="(#[0-9a-f]{3,8}|white|black)"/gi, `stroke="${color}"`);
+    tintCache.set(key, out);
+  }
+  return out;
+};
+
 function makeIcon(base: number, layers: LayerSpec[]) {
-  return function Icon({ size = base }: IconProps) {
+  return function Icon({ size = base, color }: IconProps) {
     const s = size / base;
     const dark = useColorScheme() === 'dark';
     return (
@@ -44,7 +66,13 @@ function makeIcon(base: number, layers: LayerSpec[]) {
             }}
           >
             <SvgXml
-              xml={dark ? darkXml(layer.xml) : layer.xml}
+              xml={
+                color
+                  ? tintXml(layer.xml, color)
+                  : dark
+                  ? darkXml(layer.xml)
+                  : layer.xml
+              }
               width="100%"
               height="100%"
             />
@@ -112,8 +140,13 @@ export const PlusCircleIcon = makeIcon(48, [
 /** Small red notification dot. */
 export const DotIcon = makeIcon(8, [{ xml: svg.dot, l: 0, t: 0, w: 8, h: 8 }]);
 
-/** The Routiner mark as a quiet monochrome glyph (Home header → Assistant). */
+/** The Slay mark as a quiet monochrome glyph (Home header → Assistant). */
 /** Shopping basket — the Grocery tab. Handle above, basket below. */
+export const WalletIcon = makeIcon(24, [
+  { xml: svg.walletSec, l: 5, t: 4.5, w: 14, h: 3.5 },
+  { xml: svg.walletPri, l: 2, t: 7.5, w: 20, h: 13 },
+]);
+
 export const BasketIcon = makeIcon(24, [
   { xml: svg.basketSec, l: 6, t: 2.5, w: 12, h: 6 },
   { xml: svg.basketPri, l: 2, t: 8, w: 20, h: 13 },

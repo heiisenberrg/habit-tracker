@@ -1,4 +1,4 @@
-/** Seed content mirroring the Routiner Figma designs + Ember v3 feature set. */
+/** Seed content mirroring the Slay Figma designs + Ember v3 feature set. */
 
 export type HabitGoalUnit =
   | 'ML'

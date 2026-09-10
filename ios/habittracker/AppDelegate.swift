@@ -83,7 +83,7 @@ class ThemeManager: NSObject {
 /// reload budget, except when the lock state flipped (forceReload).
 @objc(WidgetBridge)
 class WidgetBridge: NSObject {
-  private static let appGroup = "group.com.lucidbots.lucidbots"
+  private static let appGroup = "group.com.lucidbots.lucidapp"
   private static let minReloadInterval: TimeInterval = 60
   private static var lastReload: Date?
 

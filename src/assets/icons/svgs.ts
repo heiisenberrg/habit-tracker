@@ -1,4 +1,4 @@
-// Auto-generated from Figma layer exports (Routiner design). Do not hand-edit paths.
+// Auto-generated from Figma layer exports (Slay design). Do not hand-edit paths.
 // Regenerate by re-downloading layers and re-running the generator (see repo history).
 
 export const calendarPri = `<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="17.8396" height="20" viewBox="0 0 17.8396 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -95,7 +95,7 @@ export const timeSec = `<svg preserveAspectRatio="none" overflow="visible" style
 <path id="&#240;&#159;&#140;&#136; Secondary" fill-rule="evenodd" clip-rule="evenodd" d="M20 10C20 15.524 15.523 20 10 20C4.477 20 0 15.524 0 10C0 4.478 4.477 0 10 0C15.523 0 20 4.478 20 10" fill="#EBECFF"/>
 </svg>`;
 
-/** Routiner mark, monochrome: ring + heart (hand-drawn, not a Figma export). */
+/** Slay mark, monochrome: ring + heart (hand-drawn, not a Figma export). */
 export const assistantMark = `<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 <circle cx="12" cy="12" r="10" stroke="#040415" stroke-width="1.8"/>
 <path d="M12 17.2C11.7 17.2 11.4 17.1 11.2 16.9L7.6 13.4C6.3 12.1 6.3 10 7.6 8.7C8.8 7.5 10.7 7.5 11.9 8.6L12 8.7L12.1 8.6C13.3 7.5 15.2 7.5 16.4 8.7C17.7 10 17.7 12.1 16.4 13.4L12.8 16.9C12.6 17.1 12.3 17.2 12 17.2Z" fill="#040415"/>
@@ -107,4 +107,13 @@ export const basketPri = `<svg preserveAspectRatio="none" overflow="visible" sty
 
 export const basketSec = `<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="12" height="6" viewBox="0 0 12 6" fill="none" xmlns="http://www.w3.org/2000/svg">
 <path fill-rule="evenodd" clip-rule="evenodd" d="M0.72 5.06C0.36 4.8 0.28 4.3 0.54 3.94L2.9 0.66C3.38 0 4.16 -0.2 4.84 0.16L6 0.78L7.16 0.16C7.84 -0.2 8.62 0 9.1 0.66L11.46 3.94C11.72 4.3 11.64 4.8 11.28 5.06C10.92 5.32 10.42 5.24 10.16 4.88L7.86 1.68L6.38 2.46C6.14 2.58 5.86 2.58 5.62 2.46L4.14 1.68L1.84 4.88C1.58 5.24 1.08 5.32 0.72 5.06Z" fill="#EAECF0"/>
+</svg>`;
+
+/** Wallet, hand-drawn to match the duotone set: pale flap + ink body with a clasp cut-out. */
+export const walletSec = `<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="14" height="3.5" viewBox="0 0 14 3.5" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M1.75 0H12.25C13.22 0 14 0.78 14 1.75V3.5H0V1.75C0 0.78 0.78 0 1.75 0Z" fill="#EAECF0"/>
+</svg>`;
+
+export const walletPri = `<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="20" height="13" viewBox="0 0 20 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path fill-rule="evenodd" clip-rule="evenodd" d="M3 0C1.34 0 0 1.34 0 3V10C0 11.66 1.34 13 3 13H17C18.66 13 20 11.66 20 10V3C20 1.34 18.66 0 17 0H3ZM14.75 4.75C13.78 4.75 13 5.53 13 6.5C13 7.47 13.78 8.25 14.75 8.25H18.25C19.22 8.25 20 7.47 20 6.5C20 5.53 19.22 4.75 18.25 4.75H14.75Z" fill="#040415"/>
 </svg>`;

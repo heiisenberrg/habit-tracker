@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Quote of the day, 4x1 and 4x2 from one layout: the quote auto-sizes
+     (11–17sp, iOS's minimumScaleFactor) into the height the host grants, and
+     QuoteWidgetProvider hides the eyebrow on a single row. Auto-size is an XML
+     attribute, so it survives RemoteViews inflation (minSdk 26 = API of
+     android:autoSizeTextType). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/widget_quote_header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif-bold"
+        android:letterSpacing="0.1"
+        android:maxLines="1"
+        android:text="@string/widget_quote_header"
+        android:textAllCaps="true"
+        android:textColor="@color/widget_text_secondary"
+        android:textSize="10sp" />
+
+    <TextView
+        android:id="@+id/widget_quote_text"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="6dp"
+        android:layout_weight="1"
+        android:autoSizeMaxTextSize="17sp"
+        android:autoSizeMinTextSize="11sp"
+        android:autoSizeStepGranularity="1sp"
+        android:autoSizeTextType="uniform"
+        android:fontFamily="sans-serif-medium"
+        android:gravity="center_vertical"
+        android:text="@string/widget_preview_quote"
+        android:textColor="@color/widget_text"
+        android:textSize="17sp" />
+
+    <TextView
+        android:id="@+id/widget_quote_author"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:text="@string/widget_preview_author"
+        android:textColor="@color/widget_text_secondary"
+        android:textSize="12sp" />
+</LinearLayout>

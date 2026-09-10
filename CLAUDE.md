@@ -1,4 +1,4 @@
-# habittracker (Routiner)
+# habittracker (Slay)
 
 Personal habit-tracker app (React Native 0.87, New Architecture). See README.md
 for setup; toolchain quirks live in the session memory notes.

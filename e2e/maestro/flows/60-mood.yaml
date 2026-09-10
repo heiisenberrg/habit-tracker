@@ -1,6 +1,6 @@
 # The Home mood emoji opens the mood picker ALONE — no assistant or habit
 # cards. Run after 00-new-user.
-appId: com.lucidbots.lucidbots
+appId: com.lucidbots.lucidapp.adhoc
 ---
 - launchApp
 - runFlow:

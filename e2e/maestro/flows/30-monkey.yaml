@@ -1,4 +1,4 @@
-appId: com.lucidbots.lucidbots
+appId: com.lucidbots.lucidapp.adhoc
 ---
 - launchApp
 - tapOn:
@@ -340,6 +340,6 @@ appId: com.lucidbots.lucidbots
 - takeScreenshot: m160
 - launchApp
 - extendedWaitUntil:
-    visible: ".*(Home|Back|Routiner Assistant|Continue with E-mail).*"
+    visible: ".*(Home|Back|Slay Assistant|Continue with E-mail).*"
     timeout: 20000
 - takeScreenshot: m-final

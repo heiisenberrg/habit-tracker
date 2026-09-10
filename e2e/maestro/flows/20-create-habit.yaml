@@ -1,19 +1,15 @@
-appId: com.lucidbots.lucidbots
+appId: com.lucidbots.lucidapp.adhoc
 ---
 
 - launchApp
-# Unique to the interstitial: Home's header link says "…Opens ZenQuotes".
+# The ZenQuotes attribution only exists on the quote-of-the-day interstitial.
 - assertNotVisible: ".*Quotes by ZenQuotes.*"
 - extendedWaitUntil:
     visible: "Hi, Aj.*"
     timeout: 45000
-- tapOn:
-    point: "60%,29%"
-- extendedWaitUntil:
-    visible: ".*New Good Habit.*"
-    timeout: 6000
-- takeScreenshot: c01-quick-actions
-- tapOn: ".*New Good Habit.*"
+# Home's add-habit control goes STRAIGHT to New Good Habit (d1b7c4b bypassed
+# the old Add sheet; the mood chip opens only the mood card now).
+- tapOn: "Add a habit"
 - extendedWaitUntil:
     visible: ".*Create Custom Habit.*"
     timeout: 6000

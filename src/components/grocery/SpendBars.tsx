@@ -11,9 +11,12 @@ import { chartSteps, colors, radius, spacing } from '../../theme/theme';
 import AppText from '../AppText';
 
 type Props = {
-  series: MonthPoint[];
+  /** Only monthKey + spend are read, so any month series plots here. */
+  series: Pick<MonthPoint, 'monthKey' | 'spend'>[];
   selected: string;
   onSelect: (monthKey: string) => void;
+  /** What a zero month means: "no shops" (grocery), "nothing logged" (expenses). */
+  emptyLabel?: string;
 };
 
 const PLOT_HEIGHT = 96;
@@ -26,7 +29,7 @@ const ZERO_STUB = 3;
  * own value (the contrast relief the chart palette owes) and the whole column
  * is the tap target, not just the bar.
  */
-function SpendBars({ series, selected, onSelect }: Props) {
+function SpendBars({ series, selected, onSelect, emptyLabel = 'no shops' }: Props) {
   const dark = useColorScheme() === 'dark';
   const step = dark ? chartSteps.dark : chartSteps.light;
   const max = Math.max(...series.map(p => p.spend), 0);
@@ -46,7 +49,7 @@ function SpendBars({ series, selected, onSelect }: Props) {
               accessibilityRole="button"
               accessibilityState={{ selected: on }}
               accessibilityLabel={`${monthLabel(point.monthKey)}: ${
-                point.spend === 0 ? 'no shops' : formatEur(point.spend)
+                point.spend === 0 ? emptyLabel : formatEur(point.spend)
               }`}
               onPress={() => onSelect(point.monthKey)}
               style={styles.column}

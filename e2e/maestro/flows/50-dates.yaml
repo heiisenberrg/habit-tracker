@@ -1,5 +1,5 @@
 # Remember dates: add a birthday from Settings, see it in the list.
-appId: com.lucidbots.lucidbots
+appId: com.lucidbots.lucidapp.adhoc
 ---
 - launchApp
 - runFlow:

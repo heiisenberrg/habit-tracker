@@ -10,6 +10,16 @@ import {
   emptyGrocery,
 } from '../data/grocery';
 import { RememberedDate } from '../data/dates';
+import { LogbookSlice, emptyLogbook } from '../data/logbook';
+import {
+  Debt,
+  DebtDirection,
+  Expense,
+  ExpenseCategory,
+  RecurringExpense,
+} from '../data/expenses';
+import { copyFromPreviousMonth } from '../services/expenses';
+import { pendingMaterializations } from '../services/recurringExpenses';
 import type { DailyQuote } from '../data/quotes';
 import { Challenge, Habit, PlannerItem, seedChallenges } from '../data/seed';
 
@@ -54,7 +64,7 @@ export type AppLockPrefs = {
 export type ZenPrefs = {
   /** ISO end time of the running session, or null when idle */
   until: string | null;
-  /** also run the user's "Routiner Zen" iOS Focus shortcut on start */
+  /** also run the user's "Slay Zen" iOS Focus shortcut on start */
   useFocusShortcut: boolean;
 };
 
@@ -152,6 +162,58 @@ type State = {
   ) => string;
   updateDate: (id: string, patch: Partial<Omit<RememberedDate, 'id'>>) => void;
   removeDate: (id: string) => void;
+  /** Expense tracker: hand-entered monthly bills; groceries join from trips. */
+  expenses: Expense[];
+  /** Returns the new id, or '' when the amount isn't a positive number. */
+  addExpense: (input: {
+    monthKey: string;
+    category: ExpenseCategory;
+    amount: number;
+    note?: string;
+  }) => string;
+  updateExpense: (
+    id: string,
+    patch: Partial<Omit<Expense, 'id' | 'createdAt'>>,
+  ) => void;
+  removeExpense: (id: string) => void;
+  /** Copies last month's bills this month doesn't have yet; returns how many. */
+  copyLastMonthExpenses: (monthKey: string) => number;
+  /** Debts: money in flight both ways, open until settled. */
+  debts: Debt[];
+  /** Returns the new id, or '' when person is blank or the amount broken. */
+  addDebt: (input: {
+    person: string;
+    direction: DebtDirection;
+    amount: number;
+    note?: string;
+  }) => string;
+  updateDebt: (id: string, patch: Partial<Omit<Debt, 'id' | 'createdAt'>>) => void;
+  removeDebt: (id: string) => void;
+  /** Recurring bills: the rules that materialize into expenses when due. */
+  recurring: RecurringExpense[];
+  /** Returns the new id, or '' when the amount or day is broken. */
+  addRecurring: (input: {
+    category: ExpenseCategory;
+    amount: number;
+    note?: string;
+    day: number;
+  }) => string;
+  updateRecurring: (
+    id: string,
+    patch: Partial<Omit<RecurringExpense, 'id' | 'createdAt'>>,
+  ) => void;
+  removeRecurring: (id: string) => void;
+  /** Materialize every due-but-missing month into the ledger (idempotent). */
+  rollRecurring: (now?: Date) => void;
+  /** Logbook: named things you do now and then, each with its history. */
+  logbook: LogbookSlice;
+  /** Returns the new id, or '' when the name is blank. */
+  addTracker: (name: string, emoji: string) => string;
+  /** Deleting a tracker also deletes its entries. */
+  removeTracker: (id: string) => void;
+  /** Log an occurrence on a day key; returns the id ('' on blank date). */
+  logTrackerEntry: (trackerId: string, date: string) => string;
+  removeTrackerEntry: (id: string) => void;
 
   /** device integrations (personal app) */
   healthConnected: boolean;
@@ -284,6 +346,10 @@ const initial = () => ({
   dailyQuote: null as DailyQuote | null,
   grocery: emptyGrocery(),
   dates: [] as RememberedDate[],
+  expenses: [] as Expense[],
+  debts: [] as Debt[],
+  recurring: [] as RecurringExpense[],
+  logbook: emptyLogbook(),
   healthConnected: false,
   calendarConnected: false,
   darkMode: false,
@@ -324,6 +390,10 @@ export const DATA_KEYS = [
   'wellbeing',
   'grocery',
   'dates',
+  'expenses',
+  'debts',
+  'recurring',
+  'logbook',
   'challengeJoinedOn',
   'inbox',
   'prefs',
@@ -425,6 +495,22 @@ export const migrateStore = (persisted: unknown, version: number) => {
   if (version < 6) {
     // v6: Remember dates. Existing installs start with an empty list.
     s = { ...s, dates: Array.isArray(s.dates) ? s.dates : [] };
+  }
+  if (version < 7) {
+    // v7: the Expenses tab. Existing installs start with an empty ledger.
+    s = { ...s, expenses: Array.isArray(s.expenses) ? s.expenses : [] };
+  }
+  if (version < 8) {
+    // v8: debts on the Expenses tab. Existing installs owe nobody anything.
+    s = { ...s, debts: Array.isArray(s.debts) ? s.debts : [] };
+  }
+  if (version < 9) {
+    // v9: recurring bills. Existing installs start with no rules.
+    s = { ...s, recurring: Array.isArray(s.recurring) ? s.recurring : [] };
+  }
+  if (version < 10) {
+    // v10: the Logbook. Existing installs start with nothing tracked.
+    s = { ...s, logbook: s.logbook ?? emptyLogbook() };
   }
   return s;
 };
@@ -944,11 +1030,226 @@ export const useStore = create<State>()(
       removeDate: id =>
         set(s => ({ dates: s.dates.filter(d => d.id !== id) })),
 
+      addExpense: input => {
+        const amount = Number(input.amount);
+        if (!Number.isFinite(amount) || amount <= 0) {
+          return '';
+        }
+        const id = gid('exp-');
+        set(s => ({
+          expenses: [
+            ...s.expenses,
+            {
+              ...input,
+              id,
+              amount: Math.round(amount * 100) / 100,
+              createdAt: new Date().toISOString(),
+            },
+          ],
+        }));
+        return id;
+      },
+      updateExpense: (id, patch) =>
+        set(s => ({
+          expenses: s.expenses.map(e => {
+            if (e.id !== id) {
+              return e;
+            }
+            const next = { ...e, ...patch };
+            // A broken amount keeps the old one — never NaN in the ledger.
+            const amount =
+              Number.isFinite(next.amount) && next.amount > 0
+                ? Math.round(next.amount * 100) / 100
+                : e.amount;
+            return { ...next, amount };
+          }),
+        })),
+      removeExpense: id =>
+        set(s => ({ expenses: s.expenses.filter(e => e.id !== id) })),
+      addDebt: input => {
+        const person = input.person.trim();
+        const amount = Number(input.amount);
+        if (!person || !Number.isFinite(amount) || amount <= 0) {
+          return '';
+        }
+        const id = gid('debt-');
+        set(s => ({
+          debts: [
+            ...s.debts,
+            {
+              ...input,
+              id,
+              person,
+              amount: Math.round(amount * 100) / 100,
+              settled: false,
+              createdAt: new Date().toISOString(),
+            },
+          ],
+        }));
+        return id;
+      },
+      updateDebt: (id, patch) =>
+        set(s => ({
+          debts: s.debts.map(d => {
+            if (d.id !== id) {
+              return d;
+            }
+            const next = { ...d, ...patch };
+            const amount =
+              Number.isFinite(next.amount) && next.amount > 0
+                ? Math.round(next.amount * 100) / 100
+                : d.amount;
+            const person = next.person.trim() || d.person;
+            return { ...next, amount, person };
+          }),
+        })),
+      removeDebt: id =>
+        set(s => ({ debts: s.debts.filter(d => d.id !== id) })),
+
+      addTracker: (name, emoji) => {
+        const clean = name.trim();
+        if (!clean) {
+          return '';
+        }
+        const id = gid('trk-');
+        set(s => ({
+          logbook: {
+            ...s.logbook,
+            trackers: [
+              ...s.logbook.trackers,
+              {
+                id,
+                name: clean,
+                emoji: emoji || '📌',
+                createdAt: new Date().toISOString(),
+              },
+            ],
+          },
+        }));
+        return id;
+      },
+      removeTracker: id =>
+        set(s => ({
+          logbook: {
+            trackers: s.logbook.trackers.filter(t => t.id !== id),
+            entries: s.logbook.entries.filter(e => e.trackerId !== id),
+          },
+        })),
+      logTrackerEntry: (trackerId, date) => {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+          return '';
+        }
+        const id = gid('log-');
+        set(s => ({
+          logbook: {
+            ...s.logbook,
+            entries: [
+              ...s.logbook.entries,
+              { id, trackerId, date, createdAt: new Date().toISOString() },
+            ],
+          },
+        }));
+        return id;
+      },
+      removeTrackerEntry: id =>
+        set(s => ({
+          logbook: {
+            ...s.logbook,
+            entries: s.logbook.entries.filter(e => e.id !== id),
+          },
+        })),
+
+      addRecurring: input => {
+        const amount = Number(input.amount);
+        if (
+          !Number.isFinite(amount) ||
+          amount <= 0 ||
+          !Number.isInteger(input.day) ||
+          input.day < 1 ||
+          input.day > 31
+        ) {
+          return '';
+        }
+        const id = gid('rec-');
+        set(s => ({
+          recurring: [
+            ...s.recurring,
+            {
+              ...input,
+              id,
+              amount: Math.round(amount * 100) / 100,
+              enabled: true,
+              createdAt: new Date().toISOString(),
+            },
+          ],
+        }));
+        return id;
+      },
+      updateRecurring: (id, patch) =>
+        set(s => ({
+          recurring: s.recurring.map(r => {
+            if (r.id !== id) {
+              return r;
+            }
+            const next = { ...r, ...patch };
+            const amount =
+              Number.isFinite(next.amount) && next.amount > 0
+                ? Math.round(next.amount * 100) / 100
+                : r.amount;
+            const day =
+              Number.isInteger(next.day) && next.day >= 1 && next.day <= 31
+                ? next.day
+                : r.day;
+            return { ...next, amount, day };
+          }),
+        })),
+      removeRecurring: id =>
+        set(s => ({ recurring: s.recurring.filter(r => r.id !== id) })),
+      rollRecurring: (now = new Date()) => {
+        const { additions, lastAdded } = pendingMaterializations(
+          get().recurring,
+          now,
+        );
+        if (!additions.length) {
+          return;
+        }
+        set(s => ({
+          expenses: [
+            ...s.expenses,
+            ...additions.map(a => ({
+              ...a,
+              id: gid('exp-'),
+              createdAt: new Date().toISOString(),
+            })),
+          ],
+          recurring: s.recurring.map(r =>
+            lastAdded[r.id] ? { ...r, lastAddedMonth: lastAdded[r.id] } : r,
+          ),
+        }));
+      },
+
+      copyLastMonthExpenses: monthKey => {
+        const additions = copyFromPreviousMonth(get().expenses, monthKey);
+        if (additions.length) {
+          set(s => ({
+            expenses: [
+              ...s.expenses,
+              ...additions.map(a => ({
+                ...a,
+                id: gid('exp-'),
+                createdAt: new Date().toISOString(),
+              })),
+            ],
+          }));
+        }
+        return additions.length;
+      },
+
       reset: () => set(initial()),
     }),
     {
       name: 'routiner-store',
-      version: 6,
+      version: 10,
       storage: routinerStorage,
       migrate: migrateStore as (p: unknown, v: number) => State,
     },

@@ -142,7 +142,7 @@ chat line logs a habit, and the streak survives a sick day. Everything else
   new bundle id and verify the borrowed team (QAW658347B) mints a profile;
   refusal auto-defers D8 to TODOS with no sunk feature work. iOS 16 minimum
   stated. Then: `ShieldConfiguration` data source joins App Group
-  `group.com.lucidbots.lucidbots`; UI limited to title/subtitle/icon/buttons;
+  `group.com.lucidbots.lucidapp`; UI limited to title/subtitle/icon/buttons;
   refreshes when re-presented, NOT live. The app mirrors unlock-habit name +
   progress into the consolidated `sharedState` payload (1A) on every
   completion write. Missing/corrupt payload → generic fallback copy, never a

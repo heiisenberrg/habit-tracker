@@ -1,0 +1,106 @@
+# Expenses tab: add the rent, see it in the list and in the month total.
+appId: com.lucidbots.lucidapp.adhoc
+---
+- launchApp
+- runFlow:
+    when:
+      visible: "Continue"
+    commands:
+      - tapOn: "Continue"
+- extendedWaitUntil:
+    visible: "Hi, Aj.*"
+    timeout: 45000
+- tapOn: "Expenses"
+- extendedWaitUntil:
+    visible: ".*Groceries.*"
+    timeout: 15000
+- takeScreenshot: x1-empty
+- tapOn: "Add an expense"
+- tapOn: "Home rent"
+- tapOn:
+    id: "expense-amount"
+- inputText: "650"
+# The decimal pad has no Done key; a drag dismisses it (on-drag) and brings
+# the Save button into view.
+- scrollUntilVisible:
+    element:
+      text: "Save expense"
+    direction: DOWN
+    centerElement: true
+- tapOn: "Save expense"
+# The row merges emoji, label and amount into one element.
+- extendedWaitUntil:
+    visible: ".*Home rent.*€650.00.*"
+    timeout: 15000
+# Battery-safe: earlier flows may have logged grocery spend that correctly
+# folds into the month total, so never assert an exact total here.
+- assertVisible: ".*Groceries.*"
+- assertVisible: ".*2026: €.*"
+- takeScreenshot: x2-added
+# A repeating bill: due day 1 has always passed, so it lands immediately.
+- tapOn: "Add an expense"
+- tapOn: "Mobile recharge"
+- tapOn:
+    id: "expense-amount"
+- inputText: "20"
+- scrollUntilVisible:
+    element:
+      text: "Every month"
+    direction: DOWN
+    centerElement: true
+- tapOn: "Every month"
+- tapOn:
+    id: "recurring-day"
+- eraseText
+- inputText: "1"
+- scrollUntilVisible:
+    element:
+      text: "Save expense"
+    direction: DOWN
+    centerElement: true
+- tapOn: "Save expense"
+# Creating the first rule raises the notification prompt, in context.
+- tapOn:
+    text: "Allow"
+    optional: true
+- extendedWaitUntil:
+    visible: ".*Mobile recharge.*€20.00.*"
+    timeout: 15000
+- scrollUntilVisible:
+    element:
+      text: ".*monthly on day 1.*"
+    direction: DOWN
+    centerElement: true
+- assertVisible: ".*monthly on day 1.*"
+- takeScreenshot: x4-recurring
+- scrollUntilVisible:
+    element:
+      text: "Debts"
+    direction: UP
+- tapOn: "Debts"
+# Debts live behind the 🤝 header button — money in flight, both ways.
+- tapOn: "Debts"
+- extendedWaitUntil:
+    visible: "Add a debt"
+    timeout: 15000
+- tapOn: "Add a debt"
+- tapOn:
+    id: "debt-person"
+- inputText: "Marco"
+# Picking a direction chip also dismisses the keyboard.
+- tapOn: "Owes me"
+- tapOn:
+    id: "debt-amount"
+- inputText: "50"
+- scrollUntilVisible:
+    element:
+      text: "Save debt"
+    direction: DOWN
+    centerElement: true
+- tapOn: "Save debt"
+- extendedWaitUntil:
+    visible: ".*Marco.*owes you.*"
+    timeout: 15000
+- assertVisible: ".*Owed to you €50.00.*"
+- takeScreenshot: x3-debts
+- tapOn: "Back"

@@ -1,23 +1,30 @@
 /**
- * Routiner — habit tracker app (Figma community design), built on React Native 0.87.
+ * Slay — habit tracker app (Figma community design), built on React Native 0.87.
  *
  * @format
  */
 
-import React, { useEffect } from 'react';
+import { InitialState } from '@react-navigation/native';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Appearance,
   AppState,
+  Platform,
   StatusBar,
   StyleSheet,
-  useColorScheme,
 } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { ActionSheetHost } from './src/components/ActionSheet';
+import {
+  maybeAutoDriveBackup,
+  useDriveRestorePrompt,
+} from './src/hooks/useDriveRestorePrompt';
 import RootNavigator from './src/navigation/RootNavigator';
 import { applyAppLock } from './src/services/appLock';
 import { mirrorBackup } from './src/services/backup';
 import { resyncDateReminders } from './src/services/dateReminders';
+import { resyncRecurringReminders } from './src/services/recurringExpenses';
 import {
   registerForegroundHandler,
   resyncReminders,
@@ -26,6 +33,7 @@ import { scheduleRecap } from './src/services/recap';
 import { applyInterfaceStyle } from './src/services/theme';
 import { configureGeolocation } from './src/services/weather';
 import { pushStreakToWidget } from './src/services/widget';
+import { endSystemZen } from './src/services/zenMode';
 import { useStore } from './src/store/useStore';
 
 // Location prompts are owned by the Settings toggle — never auto-raised.
@@ -42,7 +50,6 @@ function App() {
   const planner = useStore(s => s.planner);
   const histories = useStore(s => s.histories);
   const streak = useStore(s => s.streak);
-  const scheme = useColorScheme();
 
   // Day rollover triggers (single-writer rule): hydration completion,
   // foregrounding, and a local-midnight timer. rollDays itself is
@@ -102,19 +109,36 @@ function App() {
     }
   }, [dates]);
 
+  // Recurring bills: materialize due months into the ledger, then re-arm
+  // each rule's next due-day reminder. Same hydration gate as the dates.
+  const recurring = useStore(s => s.recurring);
+  useEffect(() => {
+    if (useStore.persist.hasHydrated()) {
+      useStore.getState().rollRecurring();
+      resyncRecurringReminders(recurring);
+    }
+  }, [recurring]);
+
   // Foreground notification action presses (previously dropped — OV #10).
   useEffect(() => registerForegroundHandler(), []);
 
   // Auto-mirror the full store to the backup slot whenever the app leaves
   // the foreground (8A: corruption guard; Export is the off-device copy).
+  // Android also pushes the same JSON to the user's Google Drive app folder
+  // at most once every 20 h when they are signed in (no-op elsewhere).
   useEffect(() => {
     const sub = AppState.addEventListener('change', st => {
       if (st === 'background') {
         mirrorBackup();
+        maybeAutoDriveBackup().catch(() => {});
       }
     });
     return () => sub.remove();
   }, []);
+
+  // Fresh Android install with a Drive backup on the signed-in account:
+  // offer to restore once, before onboarding builds an empty store.
+  useDriveRestorePrompt();
 
   // Evening recap stays truthful on the in-app path: re-arm on any change
   // that alters its content (handler/quick-log paths use afterMutation).
@@ -132,6 +156,30 @@ function App() {
     Appearance.setColorScheme(applied);
     applyInterfaceStyle(applied);
   }, [applied]);
+
+  // Android: theme tokens are PlatformColor('@color/…') and a created view
+  // keeps the colour int it resolved with, so after a scheme flip the tree
+  // is remounted (keyed) with its navigation state carried over. The key
+  // follows the NATIVE `appearanceChanged` event rather than `applied` or
+  // useColorScheme(): Appearance.setColorScheme updates the JS-side cache
+  // at once, but night resources only switch (and RN's PlatformColor cache
+  // only clears) when AppCompat's config change lands — that event is
+  // emitted right after, so a remount on it re-resolves against the new
+  // values. iOS keeps a constant key; DynamicColorIOS re-resolves in place.
+  const [nativeScheme, setNativeScheme] = useState(() =>
+    Appearance.getColorScheme(),
+  );
+  useEffect(() => {
+    if (Platform.OS !== 'android') {
+      return;
+    }
+    const sub = Appearance.addChangeListener(p =>
+      setNativeScheme(p.colorScheme),
+    );
+    return () => sub.remove();
+  }, []);
+  const navKey = Platform.OS === 'android' ? nativeScheme ?? 'light' : 'nav';
+  const navStateRef = useRef<InitialState | undefined>(undefined);
 
   // Keep the shared widget/shield payload in sync with the store.
   const appLock = useStore(s => s.appLock);
@@ -177,6 +225,7 @@ function App() {
       if (!useStore.getState().prefs.vacationMode) {
         resyncReminders(useStore.getState().habits);
       }
+      endSystemZen().catch(() => {});
     };
     const ms = new Date(zenUntil).getTime() - Date.now();
     if (ms <= 0) {
@@ -191,9 +240,16 @@ function App() {
     <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>
         <StatusBar
-          barStyle={scheme === 'dark' ? 'light-content' : 'dark-content'}
+          barStyle={applied === 'dark' ? 'light-content' : 'dark-content'}
         />
-        <RootNavigator />
+        <RootNavigator
+          key={navKey}
+          initialState={navStateRef.current}
+          onStateChange={state => {
+            navStateRef.current = state;
+          }}
+        />
+        <ActionSheetHost />
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

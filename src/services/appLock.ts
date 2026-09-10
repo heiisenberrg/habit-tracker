@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { NativeModules, Platform } from 'react-native';
+import { NativeModules } from 'react-native';
 import { Habit } from '../data/seed';
 import {
   activeOn,
@@ -11,10 +11,17 @@ import {
 import { STORE_PERSIST_KEY } from './rainAlerts';
 
 /**
- * App Lock: shields user-picked apps (via the iOS Screen Time API) until an
- * unlock condition is met — a specific habit done today, every habit done,
- * or a daily time reached. The native side never learns which apps were
- * picked; it only holds opaque Screen Time tokens.
+ * App Lock: shields user-picked apps until an unlock condition is met — a
+ * specific habit done today, every habit done, or a daily time reached.
+ *
+ * Both platforms expose the same native module ("AppLock"); the guards
+ * below key off the method's presence, not Platform.OS, so a build without
+ * the module (or a test) degrades to "unsupported".
+ *  - iOS: Screen Time (FamilyControls). The native side never learns which
+ *    apps were picked; it only holds opaque tokens.
+ *  - Android: Usage access + "Display over other apps". The picker is our
+ *    own screen, the native side keeps package names and a foreground
+ *    service draws the shield.
  */
 
 export type { AppLockPrefs } from '../store/useStore';
@@ -25,6 +32,13 @@ export type AppLockState = {
   apps: number;
   categories: number;
   active: boolean;
+};
+
+/** A launchable app from the Android picker. `icon` is a PNG data URI or null. */
+export type InstalledApp = {
+  packageName: string;
+  label: string;
+  icon: string | null;
 };
 
 const native = NativeModules.AppLock;
@@ -38,7 +52,7 @@ const UNSUPPORTED: AppLockState = {
 };
 
 export const getAppLockState = async (): Promise<AppLockState> => {
-  if (Platform.OS !== 'ios' || !native?.getState) {
+  if (!native?.getState) {
     return UNSUPPORTED;
   }
   try {
@@ -48,25 +62,35 @@ export const getAppLockState = async (): Promise<AppLockState> => {
   }
 };
 
-/** Ask for Screen Time permission. False on denial/simulator/old iOS. */
+/**
+ * Ask for permission. iOS shows the Screen Time prompt and rejects on
+ * denial. Android cannot prompt: the module opens whichever special
+ * permission page is missing and resolves false, so callers re-check on
+ * AppState 'active'; it resolves true only when both were already granted.
+ * False on denial/simulator/old iOS.
+ */
 export const requestAppLockAuth = async (): Promise<boolean> => {
-  if (Platform.OS !== 'ios' || !native?.requestAuthorization) {
+  if (!native?.requestAuthorization) {
     return false;
   }
   try {
-    await native.requestAuthorization();
-    return true;
+    const granted = await native.requestAuthorization();
+    return granted !== false;
   } catch {
     return false;
   }
 };
 
-/** Show the system app picker; resolves with the stored selection size. */
+/**
+ * Show the system app picker (iOS); resolves with the stored selection
+ * size. On Android the picker is the AppLockPicker screen, and this only
+ * reports the counts.
+ */
 export const pickLockedApps = async (): Promise<{
   apps: number;
   categories: number;
 }> => {
-  if (Platform.OS !== 'ios' || !native?.presentPicker) {
+  if (!native?.presentPicker) {
     return { apps: 0, categories: 0 };
   }
   try {
@@ -76,8 +100,52 @@ export const pickLockedApps = async (): Promise<{
   }
 };
 
+/** Android: launchable apps for the picker, sorted by label. Empty elsewhere. */
+export const listInstalledApps = async (): Promise<InstalledApp[]> => {
+  if (!native?.listApps) {
+    return [];
+  }
+  try {
+    const apps: Array<Partial<InstalledApp>> = (await native.listApps()) ?? [];
+    return apps
+      .filter(app => typeof app?.packageName === 'string')
+      .map(app => ({
+        packageName: app.packageName as string,
+        label: app.label || (app.packageName as string),
+        // The bridge sends bare base64; <Image> wants a data URI.
+        icon: app.icon ? `data:image/png;base64,${app.icon}` : null,
+      }));
+  } catch {
+    return [];
+  }
+};
+
+/** Android: persist the picked packages; resolves with the stored count. */
+export const setLockedApps = async (packages: string[]): Promise<number> => {
+  if (!native?.setLockedApps) {
+    return 0;
+  }
+  try {
+    return await native.setLockedApps(packages);
+  } catch {
+    return 0;
+  }
+};
+
+/** Android: the persisted package names (empty elsewhere). */
+export const getLockedApps = async (): Promise<string[]> => {
+  if (!native?.getLockedApps) {
+    return [];
+  }
+  try {
+    return (await native.getLockedApps()) ?? [];
+  } catch {
+    return [];
+  }
+};
+
 const setShield = async (active: boolean): Promise<void> => {
-  if (Platform.OS !== 'ios' || !native?.setShield) {
+  if (!native?.setShield) {
     return;
   }
   try {

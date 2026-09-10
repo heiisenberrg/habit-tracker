@@ -1,20 +1,37 @@
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import React from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View, useColorScheme } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, radius, spacing } from '../theme/theme';
-import { BasketIcon, HomeIcon, MedalIcon, ProfileIcon } from './icons';
+import { chartSteps, colors, radius, spacing } from '../theme/theme';
+import { IconProps } from './icons';
+import {
+  BasketIcon,
+  HomeIcon,
+  MedalIcon,
+  ProfileIcon,
+  WalletIcon,
+} from './icons';
 
-const ICONS: Record<string, React.ComponentType<{ size?: number }>> = {
+const ICONS: Record<string, React.ComponentType<IconProps>> = {
   Home: HomeIcon,
   Grocery: BasketIcon,
+  Expenses: WalletIcon,
   Activity: MedalIcon,
   Profile: ProfileIcon,
 };
 
-/** Floating pill tab bar (Home · Grocery · Activity · Profile). */
+/**
+ * Tab tints must be LITERAL hexes (they are injected into SVG xml, where
+ * DynamicColorIOS cannot resolve). Active reuses the theme's per-scheme
+ * brand-blue pair; inactive is ink60's value for each scheme — solid, so
+ * every icon is plainly visible on the pill.
+ */
+const INACTIVE_TINT = { light: '#737373', dark: '#B3B3B3' } as const;
+
+/** Floating pill tab bar (Home · Grocery · Expenses · Activity · Profile). */
 function TabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
+  const scheme = useColorScheme() === 'dark' ? 'dark' : 'light';
 
   return (
     <View
@@ -37,9 +54,12 @@ function TabBar({ state, navigation }: BottomTabBarProps) {
               onPress={() => navigation.navigate(route.name)}
               style={styles.tab}
             >
-              <View style={{ opacity: focused ? 1 : 0.45 }}>
-                <Icon size={24} />
-              </View>
+              <Icon
+                size={24}
+                color={
+                  focused ? chartSteps[scheme].on : INACTIVE_TINT[scheme]
+                }
+              />
             </Pressable>
           );
         })}

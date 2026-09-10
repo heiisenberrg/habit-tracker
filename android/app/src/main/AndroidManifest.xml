@@ -1,13 +1,78 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Weather chip + rain alerts: the geolocation library requests these
+         at runtime but declares neither, and Android auto-denies undeclared
+         permissions. -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <!-- @health-connect:permissions -->
+    <!-- Health Connect, read-only: steps feed the Walk habit, sleep sessions
+         feed the Activity sleep card. -->
+    <uses-permission android:name="android.permission.health.READ_STEPS" />
+    <uses-permission android:name="android.permission.health.READ_SLEEP" />
+    <!-- Usage access (special permission, granted from system Settings):
+         App Lock foreground-app polling + the Screen Time report. -->
+    <uses-permission
+        android:name="android.permission.PACKAGE_USAGE_STATS"
+        tools:ignore="ProtectedPermissions" />
+    <!-- @app-lock:permissions -->
+    <!-- App Lock: the shield is a window drawn over the locked app
+         (SYSTEM_ALERT_WINDOW is a special permission, granted from the
+         "Display over other apps" page), kept up by a foreground service
+         (specialUse: no listed type covers "block an app until a habit is
+         done") that a reboot restarts. -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- @widgets:permissions -->
+    <!-- @zen:permissions -->
+    <!-- Zen → Do Not Disturb declares nothing: "Notification policy access"
+         is a special permission the user grants from the system page
+         (ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS), and SCHEDULE_EXACT_ALARM
+         is left out on purpose — the session-end alarm degrades to an inexact
+         one and an overdue session self-heals on the next launch. -->
+    <!-- @backup:permissions -->
+
+    <!-- @queries -->
+    <!-- @app-lock:queries — the "Lock these apps" picker lists launchable
+         apps; without this visibility filter Android 11+ hides them (no
+         QUERY_ALL_PACKAGES on purpose). -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+    </queries>
+    <queries>
+      <!-- Health Connect provider; on Android 13 and below it is a separate
+           app, and without this visibility the SDK reports it missing. -->
+      <package android:name="com.google.android.apps.healthdata" />
+    </queries>
+    <!-- @screen-time:queries — package visibility (Android 11+): the Screen
+         Time report resolves app labels and the current launcher, which are
+         hidden without this. -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.HOME" />
+        </intent>
+    </queries>
 
     <application
       android:name=".MainApplication"
       android:label="@string/app_name"
       android:icon="@mipmap/ic_launcher"
       android:roundIcon="@mipmap/ic_launcher_round"
-      android:allowBackup="false"
+      android:allowBackup="true"
+      android:fullBackupContent="@xml/backup_rules"
+      android:dataExtractionRules="@xml/data_extraction_rules"
       android:theme="@style/AppTheme"
       android:usesCleartextTraffic="${usesCleartextTraffic}"
       android:supportsRtl="true">
@@ -23,5 +88,81 @@
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
       </activity>
+      <!-- @health-connect:components -->
+      <!-- Health Connect permission-rationale entry points: the system
+           permission sheet links its "privacy policy" line to these. Both
+           just bring MainActivity forward. Android 14+ uses the
+           VIEW_PERMISSION_USAGE action, Android 13 and below the androidx
+           rationale action. -->
+      <activity-alias
+        android:name="ViewPermissionUsageActivity"
+        android:exported="true"
+        android:targetActivity=".MainActivity"
+        android:permission="android.permission.START_VIEW_PERMISSION_USAGE">
+        <intent-filter>
+          <action android:name="android.intent.action.VIEW_PERMISSION_USAGE" />
+          <category android:name="android.intent.category.HEALTH_PERMISSIONS" />
+        </intent-filter>
+      </activity-alias>
+      <activity-alias
+        android:name=".HealthPermissionsRationaleActivity"
+        android:exported="true"
+        android:targetActivity=".MainActivity">
+        <intent-filter>
+          <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
+        </intent-filter>
+      </activity-alias>
+      <!-- @app-lock:components -->
+      <!-- App Lock (applock/): the polling foreground service that draws
+           the shield, and the boot hook that brings it back after a restart
+           when the persisted shield flag is still on. -->
+      <service
+        android:name=".applock.AppLockService"
+        android:exported="false"
+        android:foregroundServiceType="specialUse">
+        <property
+          android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+          android:value="app_lock" />
+      </service>
+      <receiver
+        android:name=".applock.BootReceiver"
+        android:exported="true">
+        <intent-filter>
+            <action android:name="android.intent.action.BOOT_COMPLETED" />
+        </intent-filter>
+      </receiver>
+      <!-- @screen-time:components -->
+      <!-- Home-screen widgets (widget/): both paint from the sharedState JSON
+           the app pushes through WidgetBridge; tap opens the app. -->
+      <receiver
+        android:name=".widget.StreakWidgetProvider"
+        android:exported="true"
+        android:label="@string/widget_streak_label">
+        <intent-filter>
+            <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+        </intent-filter>
+        <meta-data
+          android:name="android.appwidget.provider"
+          android:resource="@xml/widget_streak_info" />
+      </receiver>
+      <receiver
+        android:name=".widget.QuoteWidgetProvider"
+        android:exported="true"
+        android:label="@string/widget_quote_label">
+        <intent-filter>
+            <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+        </intent-filter>
+        <meta-data
+          android:name="android.appwidget.provider"
+          android:resource="@xml/widget_quote_info" />
+      </receiver>
+      <!-- @widgets:components -->
+      <!-- @zen:components -->
+      <!-- Zen: restores the pre-session interruption filter when the
+           session-end alarm fires, so Do Not Disturb never outlives Zen. -->
+      <receiver
+        android:name=".zen.ZenEndReceiver"
+        android:exported="false" />
+      <!-- @backup:components -->
     </application>
 </manifest>

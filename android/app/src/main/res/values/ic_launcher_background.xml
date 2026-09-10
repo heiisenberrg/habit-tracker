@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The launcher icon's ground: the exact red of icon-1024.png, which
+         scripts/android-icons.sh also pads the foreground layer with. -->
+    <color name="ic_launcher_background">#E50914</color>
+</resources>

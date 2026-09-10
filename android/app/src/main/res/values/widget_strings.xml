@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Home-screen widget copy. Kept apart from strings.xml (other features
+     own that file); the picker labels/descriptions mirror the iOS
+     configurationDisplayName/description pairs. -->
+<resources>
+    <string name="widget_streak_label">Slay Streak</string>
+    <string name="widget_streak_description">Your perfect-day streak and this week at a glance.</string>
+    <string name="widget_quote_label">Quote of the day</string>
+    <string name="widget_quote_description">One motivational line a day, on your home screen.</string>
+
+    <string name="widget_streak_caption">day streak</string>
+    <string name="widget_streak_empty">Open Slay to start your streak</string>
+    <string name="widget_streak_a11y">%1$d day streak</string>
+    <string name="widget_week_a11y">This week: %1$d of 7 days done</string>
+    <string name="widget_lock_locked">🔒 %1$s</string>
+    <string name="widget_lock_unlocked">🔓 Apps unlocked</string>
+
+    <string name="widget_quote_header">Quote of the day</string>
+    <!-- Layout defaults: what the picker preview and the pre-first-update
+         frame show. Real values are set through RemoteViews every render. -->
+    <string name="widget_preview_streak">15</string>
+    <string name="widget_preview_quote">“Well begun is half done.”</string>
+    <string name="widget_preview_author">— Aristotle</string>
+    <string name="widget_day_mon">M</string>
+    <string name="widget_day_tue">T</string>
+    <string name="widget_day_wed">W</string>
+    <string name="widget_day_thu">T</string>
+    <string name="widget_day_fri">F</string>
+    <string name="widget_day_sat">S</string>
+    <string name="widget_day_sun">S</string>
+</resources>

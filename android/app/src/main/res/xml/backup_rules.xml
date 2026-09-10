@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android Auto Backup rules for API 23-30 (android:fullBackupContent).
+  API 31+ reads data_extraction_rules.xml instead; keep both files in sync.
+
+  Once any <include> exists only the listed paths are backed up, so every
+  durable file has to be named here. Nothing under cache/, code_cache/ or
+  no_backup/ is ever backed up (the platform excludes them), and the "file"
+  domain is left out on purpose: it only ever holds the RN dev bundle and
+  Hermes/Metro scratch files, none of which should follow a reinstall.
+-->
+<full-backup-content>
+    <!-- AsyncStorage (the zustand "routiner-store" snapshot, the backup
+         mirror slot and the Drive-backup keys): the default export is the
+         Room database "AsyncStorage" in databases/. Room runs SQLite in WAL
+         mode, so the -wal/-shm sidecars must travel with the main file or a
+         restore can lose the last un-checkpointed writes. -->
+    <include domain="database" path="AsyncStorage" />
+    <include domain="database" path="AsyncStorage-wal" />
+    <include domain="database" path="AsyncStorage-shm" />
+    <include domain="database" path="AsyncStorage-journal" />
+    <!-- Pre-Room AsyncStorage file: migrated into "AsyncStorage" on first
+         open if it exists, so a restored copy is still honoured. -->
+    <include domain="database" path="RKStorage" />
+    <include domain="database" path="RKStorage-journal" />
+    <!-- AsyncStorage v3 named stores (createAsyncStorage(name)) live in
+         databases/async-storage/databases/<name>.sqlite (+ -wal/-shm). -->
+    <include domain="database" path="async-storage" />
+    <!-- SharedPreferences: the native slay_* files (Zen, App Lock, widget
+         payload) plus Google Sign-In's cached account, which lets Drive
+         auto-backup resume after a reinstall without a fresh sign-in. The
+         rules have no glob syntax, so the whole domain is included and the
+         one non-durable file is excluded below. -->
+    <include domain="sharedpref" path="." />
+    <!-- React Native dev-menu settings (debug builds only). -->
+    <exclude domain="sharedpref" path="com.lucidbots.lucidapp.adhoc_preferences.xml" />
+</full-backup-content>

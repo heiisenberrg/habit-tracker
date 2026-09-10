@@ -1,8 +1,8 @@
-appId: com.lucidbots.lucidbots
+appId: com.lucidbots.lucidapp.adhoc
 ---
 
 - launchApp
-# Unique to the interstitial: Home's header link says "…Opens ZenQuotes".
+# The ZenQuotes attribution only exists on the quote-of-the-day interstitial.
 - assertNotVisible: ".*Quotes by ZenQuotes.*"
 - tapOn: "Profile"
 - tapOn: "Settings"

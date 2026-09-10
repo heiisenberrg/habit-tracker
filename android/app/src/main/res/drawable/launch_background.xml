@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Native launch screen (android:windowBackground): #161616 + the brand mark
+     centred at 120dp — pixel-for-pixel LaunchScreen.storyboard and
+     src/screens/SplashScreen.tsx, so the three read as ONE splash. The
+     ground is literal on purpose (no DayNight flip). launch_mark comes from
+     scripts/android-icons.sh. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <color android:color="#161616" />
+    </item>
+    <item>
+        <bitmap
+            android:gravity="center"
+            android:src="@drawable/launch_mark" />
+    </item>
+</layer-list>

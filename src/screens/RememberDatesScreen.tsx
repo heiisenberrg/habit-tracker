@@ -180,7 +180,7 @@ function RememberDatesScreen() {
     if (enabled && !(await requestNotificationPermission())) {
       enabled = false;
       notificationsOffAlert(
-        'The date is saved, but Routiner can’t remind you until notifications are allowed in iOS Settings.',
+        'The date is saved, but Slay can’t remind you until notifications are allowed in iOS Settings.',
       );
     }
     const fields = {
@@ -205,7 +205,7 @@ function RememberDatesScreen() {
   const toggle = async (d: RememberedDate, on: boolean) => {
     if (on && !(await requestNotificationPermission())) {
       notificationsOffAlert(
-        'Allow notifications for Routiner in iOS Settings to get this reminder.',
+        'Allow notifications for Slay in iOS Settings to get this reminder.',
       );
       return;
     }
@@ -462,7 +462,7 @@ function RememberDatesScreen() {
         {dates.length === 0 && !draft && (
           <AppText variant="body" color={colors.ink60}>
             Nothing remembered yet. Add a birthday, an anniversary or a
-            deadline and Routiner will nudge you on the day, the day before,
+            deadline and Slay will nudge you on the day, the day before,
             or both — every year.
           </AppText>
         )}

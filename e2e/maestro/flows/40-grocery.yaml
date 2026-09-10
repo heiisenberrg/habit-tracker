@@ -1,9 +1,9 @@
 # Grocery tab: write a list, run a shop at Lidl, see the month total.
-appId: com.lucidbots.lucidbots
+appId: com.lucidbots.lucidapp.adhoc
 ---
 - launchApp
-# Home's header quote link is also labelled "Quote of the day …", so key the
-# condition on the interstitial's own button instead.
+# Key the condition on the interstitial's own button: "Continue" only exists
+# on the quote-of-the-day screen (Home no longer shows the quote).
 - runFlow:
     when:
       visible: "Continue"

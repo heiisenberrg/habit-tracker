@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- App Lock shield, inflated by LockOverlay into a TYPE_APPLICATION_OVERLAY
+     window. Colors are literal: the window has no app theme, and the shield
+     is deliberately the dark palette (#161616 / white / 70% white / brand red)
+     on both light and dark devices so it reads as "the system said no". -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#161616"
+    android:fitsSystemWindows="true"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="32dp">
+
+    <TextView
+        android:id="@+id/applock_emoji"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:importantForAccessibility="no"
+        android:text="@string/applock_emoji"
+        android:textSize="72sp" />
+
+    <TextView
+        android:id="@+id/applock_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="@string/applock_title"
+        android:textColor="#FFFFFF"
+        android:textSize="24sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/applock_body"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="center"
+        android:lineSpacingExtra="4sp"
+        android:text="@string/applock_body_default"
+        android:textColor="#B3FFFFFF"
+        android:textSize="16sp" />
+
+    <Button
+        android:id="@+id/applock_open"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_marginTop="32dp"
+        android:backgroundTint="#E50914"
+        android:text="@string/applock_open"
+        android:textAllCaps="false"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp" />
+
+    <Button
+        android:id="@+id/applock_home"
+        style="?android:attr/borderlessButtonStyle"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_marginTop="8dp"
+        android:text="@string/applock_home"
+        android:textAllCaps="false"
+        android:textColor="#B3FFFFFF"
+        android:textSize="16sp" />
+
+</LinearLayout>

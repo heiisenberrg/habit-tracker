@@ -105,7 +105,7 @@ function HomeScreen() {
     return historyDayFraction(histories, habits, 83 - diff) >= 1;
   };
 
-  // HealthKit step sync -> the STEPS habit
+  // Health-store (HealthKit / Health Connect) step sync -> the STEPS habit
   useEffect(() => {
     if (!healthConnected) {
       return;
@@ -357,6 +357,7 @@ function HomeScreen() {
           habits={habits}
           completions={completions}
           selected={selected}
+          onAdd={() => navigation.navigate('NewGoodHabit')}
           onPressHabit={id => navigation.navigate('HabitDetail', { id })}
           onIncrement={habit =>
             trackingOf(habit) === 'check'

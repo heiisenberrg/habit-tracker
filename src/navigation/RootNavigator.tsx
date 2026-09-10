@@ -1,15 +1,23 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { NavigationContainer } from '@react-navigation/native';
+import {
+  InitialState,
+  NavigationContainer,
+  NavigationState,
+} from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React from 'react';
 import TabBar from '../components/TabBar';
 import ActivityScreen from '../screens/ActivityScreen';
+import AppLockPickerScreen from '../screens/AppLockPickerScreen';
 import CalendarScreen from '../screens/CalendarScreen';
 import ChallengeDetailScreen from '../screens/ChallengeDetailScreen';
 import CreateAccountScreen from '../screens/CreateAccountScreen';
 import CreateCustomHabitScreen from '../screens/CreateCustomHabitScreen';
+import DebtsScreen from '../screens/DebtsScreen';
 import EmailAuthScreen from '../screens/EmailAuthScreen';
+import ExpensesScreen from '../screens/ExpensesScreen';
 import HabitDetailScreen from '../screens/HabitDetailScreen';
+import LogbookScreen from '../screens/LogbookScreen';
 import HomeScreen from '../screens/HomeScreen';
 import AssistantScreen from '../screens/AssistantScreen';
 import NewGoodHabitScreen from '../screens/NewGoodHabitScreen';
@@ -48,6 +56,9 @@ export type RootStackParamList = {
   Settings: undefined;
   Notifications: undefined;
   RememberDates: undefined;
+  Debts: undefined;
+  Logbook: undefined;
+  AppLockPicker: undefined;
   Calendar: undefined;
   HabitDetail: { id: string };
 };
@@ -69,15 +80,29 @@ function MainTabs() {
     >
       <Tabs.Screen name="Home" component={HomeScreen} />
       <Tabs.Screen name="Grocery" component={GroceryScreen} />
+      <Tabs.Screen name="Expenses" component={ExpensesScreen} />
       <Tabs.Screen name="Activity" component={ActivityScreen} />
       <Tabs.Screen name="Profile" component={ProfileScreen} />
     </Tabs.Navigator>
   );
 }
 
-function RootNavigator() {
+type Props = {
+  /**
+   * App.tsx remounts the navigator on Android after a theme flip (native
+   * views keep their resolved colours) and feeds the last reported state
+   * back in, so the user stays on the screen they were on — never Splash.
+   */
+  initialState?: InitialState;
+  onStateChange?: (state: NavigationState | undefined) => void;
+};
+
+function RootNavigator({ initialState, onStateChange }: Props) {
   return (
-    <NavigationContainer>
+    <NavigationContainer
+      initialState={initialState}
+      onStateChange={onStateChange}
+    >
       <Stack.Navigator
         initialRouteName={
           (__DEV__ ? (DEBUG_STACK_ROUTE as any) : null) ?? 'Splash'
@@ -119,6 +144,9 @@ function RootNavigator() {
         <Stack.Screen name="Settings" component={SettingsScreen} />
         <Stack.Screen name="Notifications" component={NotificationsScreen} />
         <Stack.Screen name="RememberDates" component={RememberDatesScreen} />
+        <Stack.Screen name="Debts" component={DebtsScreen} />
+        <Stack.Screen name="Logbook" component={LogbookScreen} />
+        <Stack.Screen name="AppLockPicker" component={AppLockPickerScreen} />
         <Stack.Screen name="Calendar" component={CalendarScreen} />
         <Stack.Screen name="ShopTrip" component={ShopTripScreen} />
         <Stack.Screen name="TripDetail" component={TripDetailScreen} />

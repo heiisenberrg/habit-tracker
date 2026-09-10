@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ≈2x2 Slay Streak (iOS SmallStreakView): the count, its caption, and this
+     week as seven dots. RemoteViews-safe views only; every value here is a
+     placeholder that StreakWidgetProvider overwrites on each render. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background"
+    android:orientation="vertical"
+    android:padding="14dp">
+
+    <TextView
+        android:id="@+id/widget_streak_number"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="sans-serif-black"
+        android:includeFontPadding="false"
+        android:maxLines="1"
+        android:text="@string/widget_preview_streak"
+        android:textColor="@color/widget_text"
+        android:textSize="36sp" />
+
+    <TextView
+        android:id="@+id/widget_streak_caption"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:ellipsize="end"
+        android:fontFamily="sans-serif-medium"
+        android:maxLines="2"
+        android:text="@string/widget_streak_caption"
+        android:textColor="@color/widget_text_secondary"
+        android:textSize="12sp" />
+
+    <!-- Flexible spacer. Not <Space>: it is not on RemoteViews' allow-list,
+         and the launcher then shows "Can't load widget" for the whole widget. -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <LinearLayout
+        android:id="@+id/widget_week_row"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:id="@+id/widget_dot_1"
+            android:layout_width="0dp"
+            android:layout_height="12dp"
+            android:layout_weight="1"
+            android:importantForAccessibility="no"
+            android:scaleType="center"
+            android:src="@drawable/widget_dot_done" />
+
+        <ImageView
+            android:id="@+id/widget_dot_2"
+            android:layout_width="0dp"
+            android:layout_height="12dp"
+            android:layout_weight="1"
+            android:importantForAccessibility="no"
+            android:scaleType="center"
+            android:src="@drawable/widget_dot_done" />
+
+        <ImageView
+            android:id="@+id/widget_dot_3"
+            android:layout_width="0dp"
+            android:layout_height="12dp"
+            android:layout_weight="1"
+            android:importantForAccessibility="no"
+            android:scaleType="center"
+            android:src="@drawable/widget_dot_done" />
+
+        <ImageView
+            android:id="@+id/widget_dot_4"
+            android:layout_width="0dp"
+            android:layout_height="12dp"
+            android:layout_weight="1"
+            android:importantForAccessibility="no"
+            android:scaleType="center"
+            android:src="@drawable/widget_dot_done" />
+
+        <ImageView
+            android:id="@+id/widget_dot_5"
+            android:layout_width="0dp"
+            android:layout_height="12dp"
+            android:layout_weight="1"
+            android:importantForAccessibility="no"
+            android:scaleType="center"
+            android:src="@drawable/widget_dot_done" />
+
+        <ImageView
+            android:id="@+id/widget_dot_6"
+            android:layout_width="0dp"
+            android:layout_height="12dp"
+            android:layout_weight="1"
+            android:importantForAccessibility="no"
+            android:scaleType="center"
+            android:src="@drawable/widget_dot_today" />
+
+        <ImageView
+            android:id="@+id/widget_dot_7"
+            android:layout_width="0dp"
+            android:layout_height="12dp"
+            android:layout_weight="1"
+            android:importantForAccessibility="no"
+            android:scaleType="center"
+            android:src="@drawable/widget_dot_dim" />
+    </LinearLayout>
+</LinearLayout>

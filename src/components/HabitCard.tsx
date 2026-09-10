@@ -17,7 +17,7 @@ type Props = {
 
 const HEX6 = /^#[0-9A-Fa-f]{6}$/;
 
-/** Routiner habit card: progress ring + emoji, name, "500/2000 ML", +/done. */
+/** Slay habit card: progress ring + emoji, name, "500/2000 ML", +/done. */
 function HabitCard({ habit, amount, onIncrement, onPress }: Props) {
   const progress = Math.min(1, amount / habit.goal.amount);
   const done = progress >= 1;

@@ -16,7 +16,7 @@ shield.add_file_references([swift_ref])
 
 shield.build_configurations.each do |config|
   bs = config.build_settings
-  bs['PRODUCT_BUNDLE_IDENTIFIER'] = 'com.lucidbots.lucidbots.RoutinerShield'
+  bs['PRODUCT_BUNDLE_IDENTIFIER'] = 'com.lucidbots.lucidapp.adhoc.RoutinerShield'
   bs['PRODUCT_NAME'] = 'RoutinerShield'
   bs['INFOPLIST_FILE'] = 'RoutinerShield/Info.plist'
   bs['GENERATE_INFOPLIST_FILE'] = 'NO'

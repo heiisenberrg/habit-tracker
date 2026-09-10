@@ -9,6 +9,7 @@ import App from './App';
 import { name as appName } from './app.json';
 import { runBackgroundAppLockCheck } from './src/services/appLock';
 import { runBackgroundDatesCheck } from './src/services/dateReminders';
+import { runBackgroundRecurringCheck } from './src/services/recurringExpenses';
 import { registerBackgroundHandler } from './src/services/notifications';
 import { runBackgroundRainCheck } from './src/services/rainAlerts';
 import { runBackgroundRecapCheck } from './src/services/recap';
@@ -30,6 +31,7 @@ BackgroundFetch.configure(
     await runBackgroundAppLockCheck();
     await runBackgroundRecapCheck();
     await runBackgroundDatesCheck();
+    await runBackgroundRecurringCheck();
     BackgroundFetch.finish(taskId);
   },
   taskId => BackgroundFetch.finish(taskId),
@@ -47,6 +49,7 @@ BackgroundFetch.registerHeadlessTask(async event => {
   await runBackgroundAppLockCheck();
   await runBackgroundRecapCheck();
   await runBackgroundDatesCheck();
+  await runBackgroundRecurringCheck();
   BackgroundFetch.finish(event.taskId);
 });
 

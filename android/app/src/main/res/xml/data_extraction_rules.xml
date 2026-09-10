@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android Auto Backup rules for API 31+ (android:dataExtractionRules).
+  <cloud-backup> is the Google-account backup restored on reinstall;
+  <device-transfer> is the cable/Wi-Fi copy during new-phone setup. Both
+  carry the same set: everything Slay persists lives in AsyncStorage's
+  Room database plus a few native SharedPreferences. The reasoning for each
+  entry is in backup_rules.xml (the API 23-30 twin) — keep them in sync.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <include domain="database" path="AsyncStorage" />
+        <include domain="database" path="AsyncStorage-wal" />
+        <include domain="database" path="AsyncStorage-shm" />
+        <include domain="database" path="AsyncStorage-journal" />
+        <include domain="database" path="RKStorage" />
+        <include domain="database" path="RKStorage-journal" />
+        <include domain="database" path="async-storage" />
+        <include domain="sharedpref" path="." />
+        <exclude domain="sharedpref" path="com.lucidbots.lucidapp.adhoc_preferences.xml" />
+    </cloud-backup>
+    <device-transfer>
+        <include domain="database" path="AsyncStorage" />
+        <include domain="database" path="AsyncStorage-wal" />
+        <include domain="database" path="AsyncStorage-shm" />
+        <include domain="database" path="AsyncStorage-journal" />
+        <include domain="database" path="RKStorage" />
+        <include domain="database" path="RKStorage-journal" />
+        <include domain="database" path="async-storage" />
+        <include domain="sharedpref" path="." />
+        <exclude domain="sharedpref" path="com.lucidbots.lucidapp.adhoc_preferences.xml" />
+    </device-transfer>
+</data-extraction-rules>

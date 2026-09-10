@@ -309,12 +309,12 @@ function AssistantScreen() {
         } else if (flow.id === 'reminder') {
           // The stock summary promises a ping the OS refused — stay honest.
           pushBot(
-            `Saved “${finalAnswers.what}” as a daily habit, but I couldn’t schedule the notification — enable notifications for Routiner in Settings, then switch the reminder on there.`,
+            `Saved “${finalAnswers.what}” as a daily habit, but I couldn’t schedule the notification — enable notifications for Slay in Settings, then switch the reminder on there.`,
           );
         } else {
           pushBot(flow.summary(finalAnswers), () =>
             pushBot(
-              'Heads up — I couldn’t schedule the reminder because notifications are off for Routiner. Enable them in Settings to get the daily nudge.',
+              'Heads up — I couldn’t schedule the reminder because notifications are off for Slay. Enable them in Settings to get the daily nudge.',
             ),
           );
         }
@@ -472,7 +472,7 @@ function AssistantScreen() {
           <Image source={logo} style={styles.avatarImg} resizeMode="contain" />
         </View>
         <View style={styles.flex}>
-          <AppText variant="bodyMedium">Routiner Assistant</AppText>
+          <AppText variant="bodyMedium">Slay Assistant</AppText>
           <AppText variant="alt" color={colors.green}>
             ● Always ready
           </AppText>

@@ -11,7 +11,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>Routiner</string>
+	<string>Slay</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -38,13 +38,13 @@
 		<true/>
 	</dict>
 	<key>NSCalendarsFullAccessUsageDescription</key>
-	<string>Routiner imports your meetings as time blocks in your day plan.</string>
+	<string>Slay imports your meetings as time blocks in your day plan.</string>
 	<key>NSCalendarsUsageDescription</key>
-	<string>Routiner imports your meetings as time blocks in your day plan.</string>
+	<string>Slay imports your meetings as time blocks in your day plan.</string>
 	<key>NSHealthShareUsageDescription</key>
-	<string>Routiner reads your step count to auto-track your Walk habit.</string>
+	<string>Slay reads your step count to auto-track your Walk habit.</string>
 	<key>NSHealthUpdateUsageDescription</key>
-	<string>Routiner does not write health data.</string>
+	<string>Slay does not write health data.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Your location is used to show the local weather forecast on your home screen.</string>
 	<key>UIBackgroundModes</key>

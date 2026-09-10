@@ -62,7 +62,7 @@ test('hostile inputs are rejected with named reasons', () => {
   });
   expect(parseBackup('{"version":3}')).toEqual({
     ok: false,
-    error: 'Not a Routiner backup (missing state).',
+    error: 'Not a Slay backup (missing state).',
   });
   const future = parseBackup('{"version":99,"state":{}}');
   expect(future.ok).toBe(false);

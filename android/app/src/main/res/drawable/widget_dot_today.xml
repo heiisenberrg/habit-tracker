@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Today, not yet perfect: an accent ring — the day still in play. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <stroke
+        android:width="2dp"
+        android:color="@color/widget_accent" />
+    <size
+        android:width="10dp"
+        android:height="10dp" />
+</shape>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- App Lock copy (foreground notification + shield overlay). Kept apart from
+     strings.xml so the feature's strings travel with the feature. -->
+<resources>
+    <string name="applock_channel_name">App Lock</string>
+    <string name="applock_notification_text">App Lock is on · tap to open Slay</string>
+    <string name="applock_emoji" translatable="false">🔒</string>
+    <string name="applock_title">Locked</string>
+    <string name="applock_body_default">Finish today’s habits in Slay to unlock</string>
+    <!-- emoji, habit name, progress 0–100 -->
+    <string name="applock_body_habit">Finish %1$s %2$s · %3$d%% to unlock</string>
+    <string name="applock_open">Open Slay</string>
+    <string name="applock_home">Home</string>
+</resources>

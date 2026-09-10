@@ -12,7 +12,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import AppText from './AppText';
 import { cardShadow, colors, gradients, radius, spacing } from '../theme/theme';
 
-/** White rounded card with hairline border + soft shadow (Routiner card base). */
+/** White rounded card with hairline border + soft shadow (Slay card base). */
 export function Card({
   style,
   children,

@@ -7,17 +7,18 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		049BD4674F8676F4D318A83C /* RoutinerReport.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 6B39E728D474DDF81851EAFE /* RoutinerReport.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		0C80B921A6F3F58F76C31292 /* libPods-habittracker.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5DCACB8F33CDC322A6C60F78 /* libPods-habittracker.a */; };
 		1355EF2A705300355E1C2E48 /* AppLockBridge.m in Sources */ = {isa = PBXBuildFile; fileRef = 1C5B8A230054130C4CEC109E /* AppLockBridge.m */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		2135C5A6AF8A3A12863DF804 /* WidgetBridge.m in Sources */ = {isa = PBXBuildFile; fileRef = B08FD328A205D7B7D64A367A /* WidgetBridge.m */; };
 		22D473FA4AC9A639FB229D41 /* RoutinerReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8794D3B532B4319C9DA917BC /* RoutinerReport.swift */; };
+		353E8444FE544FE65FD11722 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 45FC1B90FE6DEF06367341B4 /* GoogleService-Info.plist */; };
 		70C1F8771F45CE8EDE12702E /* RoutinerWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7620BA2C8B5F5A5A0C8871AB /* RoutinerWidget.swift */; };
 		70E87B9E3AB8A1E82FFD1DB9 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F357E7340CE398EB52CCED3F /* Foundation.framework */; };
 		74A9F5086BB660AFA3BAFD51 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
+		8AF112FB445C94311E2512D9 /* splash-mark.png in Resources */ = {isa = PBXBuildFile; fileRef = B689E82374BE8ACA225ECC4B /* splash-mark.png */; };
 		8E75CD68D59663CB1C9C3DCA /* RoutinerWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = B062845B50D5E96C5F868D73 /* RoutinerWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		A1B2C3D4E5F60718293A4B5D /* ThemeManagerBridge.m in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5C /* ThemeManagerBridge.m */; };
 		AA4FBCC80AE234FA127E7D56 /* ScreenTimeReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DA6BAECB7C5FD4696DF4F72 /* ScreenTimeReport.swift */; };
@@ -28,13 +29,6 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		68181FA54067483A07FE03F7 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 7A149DE74094316F9352AC98;
-			remoteInfo = RoutinerReport;
-		};
 		CC0BFD57763354F05BD453F2 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
@@ -52,7 +46,6 @@
 			dstSubfolderSpec = 13;
 			files = (
 				8E75CD68D59663CB1C9C3DCA /* RoutinerWidget.appex in Embed Foundation Extensions */,
-				049BD4674F8676F4D318A83C /* RoutinerReport.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -68,6 +61,7 @@
 		1DA6BAECB7C5FD4696DF4F72 /* ScreenTimeReport.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = habittracker/ScreenTimeReport.swift; sourceTree = SOURCE_ROOT; };
 		2B1C545343CA688389A26C48 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		3B4392A12AC88292D35C810B /* Pods-habittracker.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-habittracker.debug.xcconfig"; path = "Target Support Files/Pods-habittracker/Pods-habittracker.debug.xcconfig"; sourceTree = "<group>"; };
+		45FC1B90FE6DEF06367341B4 /* GoogleService-Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; name = "GoogleService-Info.plist"; path = "habittracker/GoogleService-Info.plist"; sourceTree = "<group>"; };
 		46DFDA5FE91D75D7498585F8 /* RoutinerWidget.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = RoutinerWidget.entitlements; sourceTree = "<group>"; };
 		5709B34CF0A7D63546082F79 /* Pods-habittracker.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-habittracker.release.xcconfig"; path = "Target Support Files/Pods-habittracker/Pods-habittracker.release.xcconfig"; sourceTree = "<group>"; };
 		5DCACB8F33CDC322A6C60F78 /* libPods-habittracker.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-habittracker.a"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -83,6 +77,7 @@
 		AB2C0FF38E87A53B53DDCFA2 /* ScreenTimeReport.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = habittracker/ScreenTimeReport.m; sourceTree = SOURCE_ROOT; };
 		B062845B50D5E96C5F868D73 /* RoutinerWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = RoutinerWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		B08FD328A205D7B7D64A367A /* WidgetBridge.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; name = WidgetBridge.m; path = habittracker/WidgetBridge.m; sourceTree = "<group>"; };
+		B689E82374BE8ACA225ECC4B /* splash-mark.png */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = image.png; name = "splash-mark.png"; path = "habittracker/splash-mark.png"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		F1CAD863748B2E74E431768D /* RoutinerReport.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = RoutinerReport.entitlements; sourceTree = "<group>"; };
 		F357E7340CE398EB52CCED3F /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS14.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
@@ -138,6 +133,8 @@
 				1C5B8A230054130C4CEC109E /* AppLockBridge.m */,
 				1DA6BAECB7C5FD4696DF4F72 /* ScreenTimeReport.swift */,
 				AB2C0FF38E87A53B53DDCFA2 /* ScreenTimeReport.m */,
+				B689E82374BE8ACA225ECC4B /* splash-mark.png */,
+				45FC1B90FE6DEF06367341B4 /* GoogleService-Info.plist */,
 			);
 			name = habittracker;
 			sourceTree = "<group>";
@@ -237,7 +234,6 @@
 			);
 			dependencies = (
 				03FACCB974CE93E4B9F5D99A /* PBXTargetDependency */,
-				D5FF54E7F3218BF82127D99D /* PBXTargetDependency */,
 			);
 			name = habittracker;
 			productName = habittracker;
@@ -326,6 +322,8 @@
 				81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				74A9F5086BB660AFA3BAFD51 /* PrivacyInfo.xcprivacy in Resources */,
+				8AF112FB445C94311E2512D9 /* splash-mark.png in Resources */,
+				353E8444FE544FE65FD11722 /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -454,12 +452,6 @@
 			target = 41F6369EB4EB5E420521496F /* RoutinerWidget */;
 			targetProxy = CC0BFD57763354F05BD453F2 /* PBXContainerItemProxy */;
 		};
-		D5FF54E7F3218BF82127D99D /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = RoutinerReport;
-			target = 7A149DE74094316F9352AC98 /* RoutinerReport */;
-			targetProxy = 68181FA54067483A07FE03F7 /* PBXContainerItemProxy */;
-		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
@@ -485,7 +477,7 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.lucidbots.lucidbots;
+				PRODUCT_BUNDLE_IDENTIFIER = com.lucidbots.lucidapp.adhoc;
 				PRODUCT_NAME = habittracker;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -516,7 +508,7 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.lucidbots.lucidbots;
+				PRODUCT_BUNDLE_IDENTIFIER = com.lucidbots.lucidapp.adhoc;
 				PRODUCT_NAME = habittracker;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SWIFT_VERSION = 5.0;
@@ -541,7 +533,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.lucidbots.lucidbots.RoutinerWidget;
+				PRODUCT_BUNDLE_IDENTIFIER = com.lucidbots.lucidapp.adhoc.widget;
 				PRODUCT_NAME = RoutinerWidget;
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
@@ -566,7 +558,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.lucidbots.lucidbots.RoutinerReport;
+				PRODUCT_BUNDLE_IDENTIFIER = com.lucidbots.lucidapp.adhoc.report;
 				PRODUCT_NAME = RoutinerReport;
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
@@ -747,7 +739,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.lucidbots.lucidbots.RoutinerReport;
+				PRODUCT_BUNDLE_IDENTIFIER = com.lucidbots.lucidapp.adhoc.report;
 				PRODUCT_NAME = RoutinerReport;
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
@@ -773,7 +765,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.lucidbots.lucidbots.RoutinerWidget;
+				PRODUCT_BUNDLE_IDENTIFIER = com.lucidbots.lucidapp.adhoc.widget;
 				PRODUCT_NAME = RoutinerWidget;
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;

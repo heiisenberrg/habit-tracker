@@ -9,7 +9,7 @@ import UIKit
 /// the shield refreshes when re-presented, not live. A missing or corrupt
 /// payload falls back to generic copy, never a crash.
 
-private let appGroup = "group.com.lucidbots.lucidbots"
+private let appGroup = "group.com.lucidbots.lucidapp"
 
 private struct UnlockHabit: Decodable {
   let name: String

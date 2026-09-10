@@ -1,9 +1,11 @@
 import React from 'react';
-import { ActionSheetIOS, Linking, StyleSheet, View } from 'react-native';
+import { Linking, Platform, StyleSheet, View } from 'react-native';
+import { showActionSheet } from '../ActionSheet';
 import AppText from '../AppText';
 import { Habit } from '../../data/seed';
 import { appLockConditionLabel, zenActiveAt } from '../../services/appLock';
 import { cancelReminder, resyncReminders } from '../../services/notifications';
+import { endSystemZen, startSystemZen } from '../../services/zenMode';
 import { useStore } from '../../store/useStore';
 import { colors, radius, spacing } from '../../theme/theme';
 
@@ -22,16 +24,19 @@ export function useZen() {
     : '';
 
   /** Start a quiet session: pause our reminders; the App-level effect
-   *  raises the Screen Time shield from the new zen end-time. */
+   *  raises the Screen Time shield from the new zen end-time. The system
+   *  quiet mode (Android DND) is armed alongside — it self-expires at
+   *  `until` natively, so a killed app can't leave it on. */
   const startZen = (minutes: number) => {
     const until = new Date(Date.now() + minutes * 60000).toISOString();
     store.setZen({ until });
     habits.filter(h => h.reminder?.enabled).forEach(h => cancelReminder(h.id));
-    if (store.zen.useFocusShortcut) {
-      Linking.openURL('shortcuts://run-shortcut?name=Routiner%20Zen').catch(
+    if (Platform.OS === 'ios' && store.zen.useFocusShortcut) {
+      Linking.openURL('shortcuts://run-shortcut?name=Slay%20Zen').catch(
         () => {},
       );
     }
+    startSystemZen(until).catch(() => {});
   };
 
   const endZen = () => {
@@ -39,11 +44,12 @@ export function useZen() {
     if (!store.prefs.vacationMode) {
       resyncReminders(habits);
     }
+    endSystemZen().catch(() => {});
   };
 
   const onZenPress = () => {
     if (zenOn) {
-      ActionSheetIOS.showActionSheetWithOptions(
+      showActionSheet(
         {
           title: `Zen until ${zenEndLabel}`,
           options: ['End zen early', 'Keep going'],
@@ -58,7 +64,7 @@ export function useZen() {
       );
       return;
     }
-    ActionSheetIOS.showActionSheetWithOptions(
+    showActionSheet(
       {
         title: 'Quiet time for…',
         message: 'Reminders pause and your locked apps stay shielded.',

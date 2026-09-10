@@ -17,7 +17,7 @@ report.add_file_references([swift_ref])
 
 report.build_configurations.each do |config|
   bs = config.build_settings
-  bs['PRODUCT_BUNDLE_IDENTIFIER'] = 'com.lucidbots.lucidbots.RoutinerReport'
+  bs['PRODUCT_BUNDLE_IDENTIFIER'] = 'com.lucidbots.lucidapp.adhoc.report'
   bs['PRODUCT_NAME'] = 'RoutinerReport'
   bs['INFOPLIST_FILE'] = 'RoutinerReport/Info.plist'
   bs['GENERATE_INFOPLIST_FILE'] = 'NO'

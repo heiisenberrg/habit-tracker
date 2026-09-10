@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  DARK values of the app's dynamic theme tokens (see values/colors.xml).
+  Picked up when AppCompat's night mode is on — Appearance.setColorScheme
+  flips it without recreating the Activity (uiMode is in configChanges).
+-->
+<resources>
+    <color name="surface">#232323</color>
+    <color name="background">#161616</color>
+    <color name="ink">#FFFFFF</color>
+    <color name="ink60">#B3FFFFFF</color>
+    <color name="ink40">#808080</color>
+    <color name="ink20">#404040</color>
+    <color name="ink10">#2D2D2D</color>
+    <color name="blue10">#3A1D1F</color>
+    <color name="info10">#333333</color>
+</resources>

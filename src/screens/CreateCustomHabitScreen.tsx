@@ -82,7 +82,7 @@ function CreateCustomHabitScreen() {
     if (reminder && !reminderOk) {
       Alert.alert(
         'Reminder not scheduled',
-        'Notifications are off for Routiner, so the daily reminder could not be set. Enable notifications in Settings, then turn the reminder on from the app’s Settings screen.',
+        'Notifications are off for Slay, so the daily reminder could not be set. Enable notifications in Settings, then turn the reminder on from the app’s Settings screen.',
       );
     }
     navigation.replace('Success', { title: `${label} added to your habits!` });

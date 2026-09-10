@@ -2,7 +2,7 @@ import SwiftUI
 import UIKit
 import WidgetKit
 
-private let appGroup = "group.com.lucidbots.lucidbots"
+private let appGroup = "group.com.lucidbots.lucidapp"
 
 // MARK: - Model
 
@@ -403,7 +403,7 @@ struct RoutinerWidget: Widget {
     StaticConfiguration(kind: "RoutinerStreakWidget", provider: StreakProvider()) { entry in
       RoutinerWidgetEntryView(entry: entry)
     }
-    .configurationDisplayName("Routiner Streak")
+    .configurationDisplayName("Slay Streak")
     .description("Your perfect-day streak and this week at a glance.")
     .supportedFamilies([.systemSmall, .systemMedium])
   }

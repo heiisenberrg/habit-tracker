@@ -1,0 +1,17 @@
+<resources>
+
+    <!-- Android 12+ shows a system splash before the window: paint it the
+         launch screen's ground and mark so it hands over to
+         @drawable/launch_background (and then SplashScreen.tsx) with nothing
+         moving. The icon is masked to the centre 192dp circle of a 288dp
+         canvas, which is why splash_mark carries its own transparent padding.
+         A -v31 style replaces the base one wholesale, so the shared items
+         are repeated here. -->
+    <style name="AppTheme" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="android:editTextBackground">@drawable/rn_edit_text_material</item>
+        <item name="android:windowBackground">@drawable/launch_background</item>
+        <item name="android:windowSplashScreenBackground">#161616</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_mark</item>
+    </style>
+
+</resources>

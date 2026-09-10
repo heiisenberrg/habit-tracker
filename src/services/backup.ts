@@ -86,7 +86,7 @@ export const parseBackup = (json: string): ParsedBackup => {
   }
   const p = payload as Partial<BackupPayload>;
   if (typeof p !== 'object' || p === null || typeof p.state !== 'object') {
-    return { ok: false, error: 'Not a Routiner backup (missing state).' };
+    return { ok: false, error: 'Not a Slay backup (missing state).' };
   }
   const version = typeof p.version === 'number' ? p.version : 0;
   if (version > BACKUP_VERSION) {

@@ -183,7 +183,7 @@ export const scheduleDailyReminder = async (
     await notifee.createTriggerNotification(
       {
         id: `reminder-${habitId}`,
-        title: 'Routiner',
+        title: 'Slay',
         body: `⏰ ${title} — time to keep the streak alive!`,
         android: {
           channelId,
@@ -385,7 +385,7 @@ const handleNotificationEvent = async (event: {
       const remaining = habit.goal.amount - current;
       await notifee.displayNotification({
         id: `reminder-${habitId}`,
-        title: 'Routiner',
+        title: 'Slay',
         body: `💪 ${habit.name}: ${remaining} ${habit.goal.unit} to go`,
         android: {
           channelId: 'reminders',
